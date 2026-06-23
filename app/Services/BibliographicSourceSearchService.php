@@ -64,21 +64,30 @@ class BibliographicSourceSearchService
 
     private function searchOpenLibrary(string $title, string $author, string $date, string $publisher): array
     {
-        $query = array_filter([
-            'title' => $title,
-            'author' => $author ?: null,
-            'publisher' => $publisher ?: null,
-        ]);
+        $docs = [];
+        $queries = [
+            array_filter(['title' => $title, 'author' => $author ?: null, 'publisher' => $publisher ?: null]),
+            array_filter(['title' => $title, 'author' => $author ?: null]),
+            ['q' => trim($title.' '.$author)],
+            ['title' => $title],
+        ];
 
-        $response = Http::acceptJson()
-            ->timeout(20)
-            ->get('https://openlibrary.org/search.json', $query + ['limit' => 5]);
+        foreach ($queries as $query) {
+            $response = Http::acceptJson()
+                ->timeout(20)
+                ->get('https://openlibrary.org/search.json', $query + ['limit' => 5]);
 
-        if ($response->failed()) {
-            throw new RuntimeException('Erreur OpenLibrary HTTP '.$response->status());
+            if ($response->failed()) {
+                throw new RuntimeException('Erreur OpenLibrary HTTP '.$response->status());
+            }
+
+            $docs = $response->json('docs', []);
+            if ($docs !== []) {
+                break;
+            }
         }
 
-        return collect($response->json('docs', []))
+        return collect($docs)
             ->take(5)
             ->map(function (array $doc) use ($date) {
                 $key = $doc['key'] ?? null;
