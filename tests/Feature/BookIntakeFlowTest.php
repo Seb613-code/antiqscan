@@ -467,4 +467,51 @@ class BookIntakeFlowTest extends TestCase
             'is_validated' => false,
         ]);
     }
+
+    public function test_source_search_requires_validated_title(): void
+    {
+        Storage::fake('local');
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 800, 1200),
+        ]);
+        $book = \App\Models\Book::query()->firstOrFail();
+
+        $this->post("/books/{$book->id}/sources/search")
+            ->assertRedirect("/books/{$book->id}")
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseCount('book_sources', 0);
+    }
+
+    public function test_source_candidates_are_created_and_must_be_approved_before_export(): void
+    {
+        config(['services.antiqscan_sources.provider' => 'mock']);
+        Storage::fake('local');
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 800, 1200),
+        ]);
+        $book = \App\Models\Book::query()->firstOrFail();
+        $book->fields()->where('field_key', 'title')->update([
+            'value' => 'La chaleur solaire',
+            'is_validated' => true,
+            'origin' => 'user_validated',
+        ]);
+
+        $this->post("/books/{$book->id}/sources/search")
+            ->assertRedirect("/books/{$book->id}")
+            ->assertSessionHas('status');
+
+        $source = \App\Models\BookSource::query()->firstOrFail();
+        $this->get("/books/{$book->id}/export/markdown")
+            ->assertOk()
+            ->assertDontSee('Source candidate — La chaleur solaire');
+
+        $this->post("/books/{$book->id}/sources/{$source->id}/approve")
+            ->assertRedirect("/books/{$book->id}");
+
+        $this->get("/books/{$book->id}/export/markdown")
+            ->assertOk()
+            ->assertSee('### Sources validées', false)
+            ->assertSee('La chaleur solaire');
+    }
 }

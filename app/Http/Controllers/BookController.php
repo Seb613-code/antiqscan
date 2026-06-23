@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AiRun;
 use App\Models\Book;
+use App\Models\BookSource;
+use App\Services\BibliographicSourceSearchService;
 use App\Services\CatalogueSheetRenderer;
 use App\Services\ImageIntakeService;
 use App\Services\TitlePageAiExtractionService;
@@ -137,30 +139,31 @@ class BookController extends Controller
 
     public function catalogue(Book $book, CatalogueSheetRenderer $renderer): View
     {
-        $book->load(['fields' => fn ($query) => $query->orderBy('id')]);
+        $book->load(['fields' => fn ($query) => $query->orderBy('id'), 'sources' => fn ($query) => $query->orderBy('id')]);
 
         return view('books.catalogue', [
             'book' => $book,
-            'markdown' => $renderer->renderMarkdown($book->fields),
+            'markdown' => $renderer->renderMarkdown($book->fields, $book->sources),
         ]);
     }
 
     public function exportMarkdown(Book $book, CatalogueSheetRenderer $renderer): Response
     {
-        $book->load(['fields' => fn ($query) => $query->orderBy('id')]);
+        $book->load(['fields' => fn ($query) => $query->orderBy('id'), 'sources' => fn ($query) => $query->orderBy('id')]);
 
-        return response($renderer->renderMarkdown($book->fields), 200, [
+        return response($renderer->renderMarkdown($book->fields, $book->sources), 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
         ]);
     }
 
     public function exportJson(Book $book, CatalogueSheetRenderer $renderer): JsonResponse
     {
-        $book->load(['fields' => fn ($query) => $query->orderBy('id')]);
+        $book->load(['fields' => fn ($query) => $query->orderBy('id'), 'sources' => fn ($query) => $query->orderBy('id')]);
 
         return response()->json([
             'book_id' => $book->id,
             'fields' => $renderer->renderArray($book->fields),
+            'sources' => $renderer->renderSourcesArray($book->sources),
         ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
@@ -171,6 +174,28 @@ class BookController extends Controller
         return response($renderer->renderCsv($book->fields), 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    public function searchSources(Book $book, BibliographicSourceSearchService $sources): RedirectResponse
+    {
+        try {
+            $created = $sources->search($book);
+
+            return redirect()->route('books.show', $book)
+                ->with('status', $created.' source(s) candidate(s) ajoutée(s).');
+        } catch (\Throwable $exception) {
+            return redirect()->route('books.show', $book)
+                ->with('error', $exception->getMessage());
+        }
+    }
+
+    public function approveSource(Book $book, BookSource $source): RedirectResponse
+    {
+        abort_unless($source->book_id === $book->id, 404);
+
+        $source->update(['user_approved' => true]);
+
+        return redirect()->route('books.show', $book);
     }
 
     public function extractMock(Book $book): RedirectResponse

@@ -44,4 +44,8 @@ return [
         'show_run_debug' => (bool) env('ANTIQSCAN_AI_SHOW_RUN_DEBUG', false),
     ],
 
+    'antiqscan_sources' => [
+        'provider' => env('ANTIQSCAN_SOURCES_PROVIDER', 'mock'),
+    ],
+
 ];

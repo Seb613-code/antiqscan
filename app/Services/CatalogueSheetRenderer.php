@@ -24,12 +24,40 @@ class CatalogueSheetRenderer
         return $rows;
     }
 
-    public function renderMarkdown(iterable $fields): string
+    public function renderSourcesArray(iterable $sources): array
+    {
+        $rows = [];
+
+        foreach ($sources as $source) {
+            if (! $source->user_approved) {
+                continue;
+            }
+
+            $rows[] = [
+                'source_type' => $source->source_type,
+                'title' => $source->title,
+                'url' => $source->url,
+                'citation' => $source->citation,
+            ];
+        }
+
+        return $rows;
+    }
+
+    public function renderMarkdown(iterable $fields, iterable $sources = []): string
     {
         $lines = [];
 
         foreach ($this->renderArray($fields) as $field) {
             $lines[] = sprintf('**%s** — %s', $field['label'], $field['value']);
+        }
+
+        $sourceRows = $this->renderSourcesArray($sources);
+        if ($sourceRows !== []) {
+            $lines[] = '### Sources validées';
+            foreach ($sourceRows as $source) {
+                $lines[] = sprintf('- %s%s', $source['citation'] ?: $source['title'], $source['url'] ? ' — '.$source['url'] : '');
+            }
         }
 
         return implode("\n\n", $lines);
