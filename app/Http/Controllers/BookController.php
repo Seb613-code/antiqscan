@@ -109,13 +109,21 @@ class BookController extends Controller
             'fields.*.label' => ['required', 'string', 'max:120'],
             'fields.*.value' => ['nullable', 'string'],
             'fields.*.is_validated' => ['nullable', 'boolean'],
+            'action' => ['nullable', 'string', 'in:save,validate_filled'],
         ]);
 
+        $validateFilled = ($validated['action'] ?? 'save') === 'validate_filled';
+
         foreach ($validated['fields'] ?? [] as $id => $fieldData) {
+            $value = $fieldData['value'] ?? null;
+            $isValidated = $validateFilled
+                ? filled($value)
+                : (bool) ($fieldData['is_validated'] ?? false);
+
             $book->fields()->whereKey($id)->where('is_editable', true)->update([
                 'label' => $fieldData['label'],
-                'value' => $fieldData['value'] ?? null,
-                'is_validated' => (bool) ($fieldData['is_validated'] ?? false),
+                'value' => $value,
+                'is_validated' => $isValidated,
                 'origin' => 'user_validated',
             ]);
         }

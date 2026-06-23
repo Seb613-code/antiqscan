@@ -48,7 +48,7 @@
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
                 <h2 class="text-lg font-medium">Champs catalogue</h2>
-                <p class="mt-1 text-sm text-stone-600">Remplis ou corrige, coche « validé », puis enregistre. Rien de non validé ne sort dans la fiche.</p>
+                <p class="mt-1 text-sm text-stone-600">Remplis ou corrige, coche « validé », puis enregistre. Le bouton rapide valide seulement les champs remplis.</p>
             </div>
             <div class="flex flex-wrap items-center gap-3 text-sm">
                 <a class="rounded border px-3 py-2" href="{{ route('books.catalogue', $book) }}">Voir fiche catalogue</a>
@@ -87,8 +87,9 @@
                 </div>
             </div>
 
-            <div class="flex justify-end">
-                <button class="rounded bg-stone-900 px-5 py-2 text-white">Enregistrer les validations</button>
+            <div class="flex flex-col gap-2 md:flex-row md:justify-end">
+                <button type="submit" name="action" value="validate_filled" class="rounded border border-black px-5 py-2 font-semibold text-black">Valider les champs remplis</button>
+                <button type="submit" name="action" value="save" class="rounded bg-stone-900 px-5 py-2 text-white">Enregistrer les validations</button>
             </div>
         </form>
     </section>

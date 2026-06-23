@@ -162,12 +162,51 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Prix / estimation')
             ->assertSee('Étape 2 — lancer l’extraction')
             ->assertSee('Lancer l’extraction')
+            ->assertSee('Valider les champs remplis')
             ->assertSee('1. Image importée')
             ->assertSee('2. Extraction visible')
             ->assertSee('3. Validation humaine')
             ->assertSee('La fiche finale affiche seulement les champs validés')
             ->assertSee('Auteur')
             ->assertSee('Format');
+    }
+
+    public function test_validate_filled_action_validates_only_non_empty_fields(): void
+    {
+        Storage::fake('local');
+
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
+        ]);
+
+        $book = \App\Models\Book::query()->firstOrFail();
+        $title = $book->fields()->where('field_key', 'title')->firstOrFail();
+        $subtitle = $book->fields()->where('field_key', 'subtitle')->firstOrFail();
+
+        $this->put("/books/{$book->id}/fields", [
+            'action' => 'validate_filled',
+            'fields' => [
+                $title->id => [
+                    'label' => 'Titre',
+                    'value' => 'La chaleur solaire',
+                ],
+                $subtitle->id => [
+                    'label' => 'Sous-titre',
+                    'value' => '',
+                ],
+            ],
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('book_fields', [
+            'id' => $title->id,
+            'value' => 'La chaleur solaire',
+            'is_validated' => true,
+        ]);
+        $this->assertDatabaseHas('book_fields', [
+            'id' => $subtitle->id,
+            'value' => null,
+            'is_validated' => false,
+        ]);
     }
 
     public function test_home_page_shows_extraction_button_for_existing_books(): void
