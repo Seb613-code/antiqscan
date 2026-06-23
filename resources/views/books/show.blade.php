@@ -17,7 +17,11 @@
     <section class="mt-6 rounded border bg-white p-5">
         <div class="flex items-center justify-between">
             <h2 class="text-lg font-medium">Champs catalogue</h2>
-            <div class="space-x-3 text-sm">
+            <div class="flex items-center gap-3 text-sm">
+                <form method="post" action="{{ route('books.extract.mock', $book) }}">
+                    @csrf
+                    <button class="rounded bg-amber-700 px-3 py-1 text-white">Lancer extraction mock</button>
+                </form>
                 <a class="underline" href="{{ route('books.catalogue', $book) }}">Voir fiche catalogue</a>
                 <a class="underline" href="{{ route('books.export.markdown', $book) }}">Export Markdown</a>
             </div>

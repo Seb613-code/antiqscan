@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AiRun;
 use App\Models\Book;
 use App\Services\CatalogueSheetRenderer;
 use App\Services\ImageIntakeService;
@@ -140,5 +141,43 @@ class BookController extends Controller
         return response($renderer->renderMarkdown($book->fields), 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
         ]);
+    }
+
+    public function extractMock(Book $book): RedirectResponse
+    {
+        $values = [
+            'author' => 'A. Mouchot',
+            'title' => 'La chaleur solaire et ses applications industrielles',
+            'illustration_statement' => '35 gravures intercalées dans le texte',
+            'place' => 'Paris',
+            'publisher' => 'Gauthier-Villars',
+            'publisher_address' => '55, Quai des Augustins, 55',
+            'publication_date' => '1869',
+        ];
+
+        foreach ($values as $key => $value) {
+            $book->fields()->where('field_key', $key)->update([
+                'value' => $value,
+                'origin' => 'ai_visible',
+                'confidence' => 1,
+                'is_validated' => false,
+            ]);
+        }
+
+        AiRun::create([
+            'book_id' => $book->id,
+            'run_type' => 'title_page_extraction',
+            'provider' => 'mock',
+            'model' => 'mouchot-fixture',
+            'status' => 'succeeded',
+            'prompt' => ['fixture' => 'mouchot'],
+            'response' => $values,
+            'started_at' => now(),
+            'finished_at' => now(),
+        ]);
+
+        $book->update(['status' => 'extracted']);
+
+        return redirect()->route('books.show', $book);
     }
 }

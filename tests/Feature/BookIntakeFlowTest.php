@@ -128,7 +128,53 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Champs physiques manuels')
             ->assertSee('Sources')
             ->assertSee('Prix / estimation')
+            ->assertSee('Lancer extraction mock')
             ->assertSee('Auteur')
             ->assertSee('Format');
+    }
+
+    public function test_mock_extraction_fills_mouchot_visible_fields_without_validation(): void
+    {
+        Storage::fake('local');
+
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
+        ]);
+
+        $book = \App\Models\Book::query()->firstOrFail();
+
+        $this->post("/books/{$book->id}/extract/mock")
+            ->assertRedirect("/books/{$book->id}");
+
+        $this->assertDatabaseHas('book_fields', [
+            'book_id' => $book->id,
+            'field_key' => 'author',
+            'value' => 'A. Mouchot',
+            'origin' => 'ai_visible',
+            'is_validated' => false,
+        ]);
+        $this->assertDatabaseHas('book_fields', [
+            'book_id' => $book->id,
+            'field_key' => 'title',
+            'value' => 'La chaleur solaire et ses applications industrielles',
+            'origin' => 'ai_visible',
+            'is_validated' => false,
+        ]);
+        $this->assertDatabaseHas('ai_runs', [
+            'book_id' => $book->id,
+            'run_type' => 'title_page_extraction',
+            'provider' => 'mock',
+            'model' => 'mouchot-fixture',
+            'status' => 'succeeded',
+        ]);
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'status' => 'extracted',
+        ]);
+        $this->assertDatabaseMissing('book_fields', [
+            'book_id' => $book->id,
+            'field_key' => 'pagination',
+            'value' => 'in-8',
+        ]);
     }
 }
