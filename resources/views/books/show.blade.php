@@ -31,7 +31,7 @@
         <p class="mt-2 text-sm text-stone-700">Clique ici pour remplir automatiquement les champs visibles. Pour l’instant, le fournisseur actif est le mock Mouchot.</p>
         <form method="post" action="{{ route('books.extract.mock', $book) }}" class="mt-4">
             @csrf
-            <button type="submit" class="w-full rounded bg-amber-700 px-4 py-3 text-lg font-semibold text-white md:w-auto">Lancer l’extraction</button>
+            <button type="submit" class="w-full rounded border border-black px-4 py-3 text-lg font-semibold text-black md:w-auto">Lancer l’extraction</button>
         </form>
     </section>
 
