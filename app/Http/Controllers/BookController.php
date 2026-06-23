@@ -7,6 +7,7 @@ use App\Services\CatalogueSheetRenderer;
 use App\Services\ImageIntakeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class BookController extends Controller
@@ -32,29 +33,64 @@ class BookController extends Controller
             'sort_order' => 1,
         ]);
 
-        $this->createManualCatalogueFields($book);
+        $this->createCatalogueFields($book);
 
         return redirect()->route('books.show', $book);
     }
 
-    private function createManualCatalogueFields(Book $book): void
+    private function createCatalogueFields(Book $book): void
     {
-        collect([
+        foreach ($this->visibleTitlePageFields() as $key => $label) {
+            $book->fields()->create([
+                'field_key' => $key,
+                'label' => $label,
+                'value' => null,
+                'origin' => 'ai_visible',
+                'confidence' => null,
+                'is_validated' => false,
+                'is_editable' => true,
+            ]);
+        }
+
+        foreach ($this->manualPhysicalFields() as $key => $label) {
+            $book->fields()->create([
+                'field_key' => $key,
+                'label' => $label,
+                'value' => null,
+                'origin' => 'user_manual',
+                'confidence' => null,
+                'is_validated' => false,
+                'is_editable' => true,
+            ]);
+        }
+    }
+
+    private function visibleTitlePageFields(): array
+    {
+        return [
+            'author' => 'Auteur',
+            'title' => 'Titre',
+            'subtitle' => 'Sous-titre',
+            'place' => 'Lieu',
+            'publisher' => 'Éditeur / imprimeur',
+            'publisher_address' => 'Adresse éditeur',
+            'publication_date' => 'Date',
+            'illustration_statement' => 'Mention d’illustrations',
+            'edition_statement' => 'Mention d’édition visible',
+            'visible_notes' => 'Notes visibles',
+        ];
+    }
+
+    private function manualPhysicalFields(): array
+    {
+        return [
             'format' => 'Format',
             'dimensions' => 'Dimensions',
             'pagination' => 'Pagination',
             'binding' => 'Reliure',
             'condition' => 'État',
             'copy_notes' => 'Particularités d’exemplaire',
-        ])->each(fn (string $label, string $key) => $book->fields()->create([
-            'field_key' => $key,
-            'label' => $label,
-            'value' => null,
-            'origin' => 'user_manual',
-            'confidence' => null,
-            'is_validated' => false,
-            'is_editable' => true,
-        ]));
+        ];
     }
 
     public function show(Book $book): View
@@ -94,6 +130,15 @@ class BookController extends Controller
         return view('books.catalogue', [
             'book' => $book,
             'markdown' => $renderer->renderMarkdown($book->fields),
+        ]);
+    }
+
+    public function exportMarkdown(Book $book, CatalogueSheetRenderer $renderer): Response
+    {
+        $book->load(['fields' => fn ($query) => $query->orderBy('id')]);
+
+        return response($renderer->renderMarkdown($book->fields), 200, [
+            'Content-Type' => 'text/markdown; charset=UTF-8',
         ]);
     }
 }

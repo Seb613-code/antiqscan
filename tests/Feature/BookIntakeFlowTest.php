@@ -40,13 +40,22 @@ class BookIntakeFlowTest extends TestCase
         $this->assertDatabaseHas('book_images', ['role' => 'title_page', 'sort_order' => 1]);
     }
 
-    public function test_created_book_receives_editable_manual_catalogue_fields(): void
+    public function test_created_book_receives_editable_catalogue_fields(): void
     {
         Storage::fake('local');
 
         $this->post('/books', [
             'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
         ]);
+
+        foreach (['author', 'title', 'subtitle', 'place', 'publisher', 'publisher_address', 'publication_date', 'illustration_statement', 'edition_statement', 'visible_notes'] as $fieldKey) {
+            $this->assertDatabaseHas('book_fields', [
+                'field_key' => $fieldKey,
+                'origin' => 'ai_visible',
+                'is_editable' => true,
+                'is_validated' => false,
+            ]);
+        }
 
         foreach (['format', 'dimensions', 'pagination', 'binding', 'condition', 'copy_notes'] as $fieldKey) {
             $this->assertDatabaseHas('book_fields', [
@@ -74,5 +83,32 @@ class BookIntakeFlowTest extends TestCase
         $this->get("/books/{$book->id}/catalogue")
             ->assertOk()
             ->assertDontSee('Visible but not validated');
+    }
+
+    public function test_validated_catalogue_can_be_exported_as_markdown(): void
+    {
+        $book = \App\Models\Book::factory()->create(['status' => 'validated']);
+        $book->fields()->create([
+            'field_key' => 'title',
+            'label' => 'Titre',
+            'value' => 'La chaleur solaire',
+            'origin' => 'user_validated',
+            'is_validated' => true,
+            'is_editable' => true,
+        ]);
+        $book->fields()->create([
+            'field_key' => 'price',
+            'label' => 'Prix',
+            'value' => '999 € non validé',
+            'origin' => 'estimate',
+            'is_validated' => false,
+            'is_editable' => true,
+        ]);
+
+        $this->get("/books/{$book->id}/export/markdown")
+            ->assertOk()
+            ->assertHeader('content-type', 'text/markdown; charset=UTF-8')
+            ->assertSee('**Titre** — La chaleur solaire', false)
+            ->assertDontSee('999 € non validé');
     }
 }
