@@ -111,4 +111,24 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('**Titre** — La chaleur solaire', false)
             ->assertDontSee('999 € non validé');
     }
+
+    public function test_book_show_page_groups_fields_by_simple_sections(): void
+    {
+        Storage::fake('local');
+
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
+        ]);
+
+        $book = \App\Models\Book::query()->firstOrFail();
+
+        $this->get("/books/{$book->id}")
+            ->assertOk()
+            ->assertSee('Champs visibles sur page de titre')
+            ->assertSee('Champs physiques manuels')
+            ->assertSee('Sources')
+            ->assertSee('Prix / estimation')
+            ->assertSee('Auteur')
+            ->assertSee('Format');
+    }
 }
