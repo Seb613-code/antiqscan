@@ -128,6 +128,7 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Champs physiques manuels')
             ->assertSee('Sources')
             ->assertSee('Prix / estimation')
+            ->assertSee('Étape 2 — lancer l’extraction test')
             ->assertSee('Lancer extraction mock')
             ->assertSee('1. Image importée')
             ->assertSee('2. Extraction visible')

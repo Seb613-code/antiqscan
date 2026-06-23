@@ -26,6 +26,15 @@
         </div>
     </section>
 
+    <section class="mt-6 rounded border-2 border-amber-500 bg-amber-50 p-5">
+        <h2 class="text-xl font-semibold">Étape 2 — lancer l’extraction test</h2>
+        <p class="mt-2 text-sm text-stone-700">Clique ici pour remplir automatiquement les champs visibles avec l’exemple Mouchot. Tu pourras ensuite corriger et valider.</p>
+        <form method="post" action="{{ route('books.extract.mock', $book) }}" class="mt-4">
+            @csrf
+            <button class="w-full rounded bg-amber-700 px-4 py-3 text-lg font-semibold text-white md:w-auto">Lancer extraction mock</button>
+        </form>
+    </section>
+
     <section class="mt-6 rounded border bg-white p-5">
         <h2 class="text-lg font-medium">Image</h2>
         <ul class="mt-3 list-disc pl-5 text-sm text-stone-700">
@@ -42,10 +51,6 @@
                 <p class="mt-1 text-sm text-stone-600">Remplis ou corrige, coche « validé », puis enregistre. Rien de non validé ne sort dans la fiche.</p>
             </div>
             <div class="flex flex-wrap items-center gap-3 text-sm">
-                <form method="post" action="{{ route('books.extract.mock', $book) }}">
-                    @csrf
-                    <button class="rounded bg-amber-700 px-3 py-2 text-white">Lancer extraction mock</button>
-                </form>
                 <a class="rounded border px-3 py-2" href="{{ route('books.catalogue', $book) }}">Voir fiche catalogue</a>
                 <a class="rounded border px-3 py-2" href="{{ route('books.export.markdown', $book) }}">Export Markdown</a>
             </div>
