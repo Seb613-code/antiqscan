@@ -11,3 +11,5 @@ Route::put('/books/{book}/fields', [BookController::class, 'updateFields'])->nam
 Route::post('/books/{book}/extract/mock', [BookController::class, 'extractMock'])->name('books.extract.mock');
 Route::get('/books/{book}/catalogue', [BookController::class, 'catalogue'])->name('books.catalogue');
 Route::get('/books/{book}/export/markdown', [BookController::class, 'exportMarkdown'])->name('books.export.markdown');
+Route::get('/books/{book}/export/json', [BookController::class, 'exportJson'])->name('books.export.json');
+Route::get('/books/{book}/export/csv', [BookController::class, 'exportCsv'])->name('books.export.csv');

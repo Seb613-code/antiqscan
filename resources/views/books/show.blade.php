@@ -53,6 +53,8 @@
             <div class="flex flex-wrap items-center gap-3 text-sm">
                 <a class="rounded border px-3 py-2" href="{{ route('books.catalogue', $book) }}">Voir fiche catalogue</a>
                 <a class="rounded border px-3 py-2" href="{{ route('books.export.markdown', $book) }}">Export Markdown</a>
+                <a class="rounded border px-3 py-2" href="{{ route('books.export.json', $book) }}">Export JSON</a>
+                <a class="rounded border px-3 py-2" href="{{ route('books.export.csv', $book) }}">Export CSV</a>
             </div>
         </div>
 

@@ -87,6 +87,42 @@ class BookIntakeFlowTest extends TestCase
 
     public function test_validated_catalogue_can_be_exported_as_markdown(): void
     {
+        $book = $this->bookWithOneValidatedAndOneUnvalidatedField();
+
+        $this->get("/books/{$book->id}/export/markdown")
+            ->assertOk()
+            ->assertHeader('content-type', 'text/markdown; charset=UTF-8')
+            ->assertSee('**Titre** — La chaleur solaire', false)
+            ->assertDontSee('999 € non validé');
+    }
+
+    public function test_validated_catalogue_can_be_exported_as_json(): void
+    {
+        $book = $this->bookWithOneValidatedAndOneUnvalidatedField();
+
+        $this->get("/books/{$book->id}/export/json")
+            ->assertOk()
+            ->assertJsonPath('book_id', $book->id)
+            ->assertJsonPath('fields.0.key', 'title')
+            ->assertJsonPath('fields.0.label', 'Titre')
+            ->assertJsonPath('fields.0.value', 'La chaleur solaire')
+            ->assertJsonMissing(['value' => '999 € non validé']);
+    }
+
+    public function test_validated_catalogue_can_be_exported_as_csv(): void
+    {
+        $book = $this->bookWithOneValidatedAndOneUnvalidatedField();
+
+        $this->get("/books/{$book->id}/export/csv")
+            ->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertSee('key,label,value,origin', false)
+            ->assertSee('title,Titre,"La chaleur solaire",user_validated', false)
+            ->assertDontSee('999 € non validé');
+    }
+
+    private function bookWithOneValidatedAndOneUnvalidatedField(): \App\Models\Book
+    {
         $book = \App\Models\Book::factory()->create(['status' => 'validated']);
         $book->fields()->create([
             'field_key' => 'title',
@@ -105,11 +141,7 @@ class BookIntakeFlowTest extends TestCase
             'is_editable' => true,
         ]);
 
-        $this->get("/books/{$book->id}/export/markdown")
-            ->assertOk()
-            ->assertHeader('content-type', 'text/markdown; charset=UTF-8')
-            ->assertSee('**Titre** — La chaleur solaire', false)
-            ->assertDontSee('999 € non validé');
+        return $book;
     }
 
     public function test_book_show_page_groups_fields_by_simple_sections(): void

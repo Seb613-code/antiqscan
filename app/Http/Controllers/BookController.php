@@ -8,6 +8,7 @@ use App\Services\CatalogueSheetRenderer;
 use App\Services\ImageIntakeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 
@@ -140,6 +141,25 @@ class BookController extends Controller
 
         return response($renderer->renderMarkdown($book->fields), 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
+        ]);
+    }
+
+    public function exportJson(Book $book, CatalogueSheetRenderer $renderer): JsonResponse
+    {
+        $book->load(['fields' => fn ($query) => $query->orderBy('id')]);
+
+        return response()->json([
+            'book_id' => $book->id,
+            'fields' => $renderer->renderArray($book->fields),
+        ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    }
+
+    public function exportCsv(Book $book, CatalogueSheetRenderer $renderer): Response
+    {
+        $book->load(['fields' => fn ($query) => $query->orderBy('id')]);
+
+        return response($renderer->renderCsv($book->fields), 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
 
