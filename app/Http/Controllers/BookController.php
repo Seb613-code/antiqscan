@@ -32,7 +32,29 @@ class BookController extends Controller
             'sort_order' => 1,
         ]);
 
+        $this->createManualCatalogueFields($book);
+
         return redirect()->route('books.show', $book);
+    }
+
+    private function createManualCatalogueFields(Book $book): void
+    {
+        collect([
+            'format' => 'Format',
+            'dimensions' => 'Dimensions',
+            'pagination' => 'Pagination',
+            'binding' => 'Reliure',
+            'condition' => 'État',
+            'copy_notes' => 'Particularités d’exemplaire',
+        ])->each(fn (string $label, string $key) => $book->fields()->create([
+            'field_key' => $key,
+            'label' => $label,
+            'value' => null,
+            'origin' => 'user_manual',
+            'confidence' => null,
+            'is_validated' => false,
+            'is_editable' => true,
+        ]));
     }
 
     public function show(Book $book): View

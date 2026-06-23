@@ -32,6 +32,24 @@ class BookIntakeFlowTest extends TestCase
         $this->assertDatabaseHas('book_images', ['role' => 'title_page', 'sort_order' => 1]);
     }
 
+    public function test_created_book_receives_editable_manual_catalogue_fields(): void
+    {
+        Storage::fake('local');
+
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
+        ]);
+
+        foreach (['format', 'dimensions', 'pagination', 'binding', 'condition', 'copy_notes'] as $fieldKey) {
+            $this->assertDatabaseHas('book_fields', [
+                'field_key' => $fieldKey,
+                'origin' => 'user_manual',
+                'is_editable' => true,
+                'is_validated' => false,
+            ]);
+        }
+    }
+
     public function test_catalogue_sheet_does_not_show_unvalidated_ai_fields(): void
     {
         $book = \App\Models\Book::factory()->create(['status' => 'extracted']);
