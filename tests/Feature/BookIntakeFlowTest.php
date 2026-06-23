@@ -152,6 +152,20 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Ouvrir le dossier');
     }
 
+    public function test_books_url_shows_extraction_button_for_existing_books(): void
+    {
+        Storage::fake('local');
+
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
+        ]);
+
+        $this->get('/books/')
+            ->assertOk()
+            ->assertSee('Lancer l’extraction test')
+            ->assertSee('Ouvrir le dossier');
+    }
+
     public function test_mock_extraction_fills_mouchot_visible_fields_without_validation(): void
     {
         Storage::fake('local');
