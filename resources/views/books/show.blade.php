@@ -27,11 +27,11 @@
     </section>
 
     <section class="mt-6 rounded border-2 border-amber-500 bg-amber-50 p-5">
-        <h2 class="text-xl font-semibold">Étape 2 — lancer l’extraction test</h2>
-        <p class="mt-2 text-sm text-stone-700">Clique ici pour remplir automatiquement les champs visibles avec l’exemple Mouchot. Tu pourras ensuite corriger et valider.</p>
+        <h2 class="text-xl font-semibold">Étape 2 — lancer l’extraction</h2>
+        <p class="mt-2 text-sm text-stone-700">Clique ici pour remplir automatiquement les champs visibles. Pour l’instant, le fournisseur actif est le mock Mouchot.</p>
         <form method="post" action="{{ route('books.extract.mock', $book) }}" class="mt-4">
             @csrf
-            <button class="w-full rounded bg-amber-700 px-4 py-3 text-lg font-semibold text-white md:w-auto">Lancer l’extraction test</button>
+            <button type="submit" class="w-full rounded bg-amber-700 px-4 py-3 text-lg font-semibold text-white md:w-auto">Lancer l’extraction</button>
         </form>
     </section>
 

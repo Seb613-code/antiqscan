@@ -128,8 +128,8 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Champs physiques manuels')
             ->assertSee('Sources')
             ->assertSee('Prix / estimation')
-            ->assertSee('Étape 2 — lancer l’extraction test')
-            ->assertSee('Lancer l’extraction test')
+            ->assertSee('Étape 2 — lancer l’extraction')
+            ->assertSee('Lancer l’extraction')
             ->assertSee('1. Image importée')
             ->assertSee('2. Extraction visible')
             ->assertSee('3. Validation humaine')
@@ -148,7 +148,7 @@ class BookIntakeFlowTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Lancer l’extraction test')
+            ->assertSee('Lancer l’extraction')
             ->assertSee('Ouvrir le dossier');
     }
 
@@ -162,7 +162,7 @@ class BookIntakeFlowTest extends TestCase
 
         $this->get('/books/')
             ->assertOk()
-            ->assertSee('Lancer l’extraction test')
+            ->assertSee('Lancer l’extraction')
             ->assertSee('Ouvrir le dossier');
     }
 
