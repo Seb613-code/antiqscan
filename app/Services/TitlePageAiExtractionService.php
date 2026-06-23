@@ -23,6 +23,8 @@ class TitlePageAiExtractionService
         'visible_notes',
     ];
 
+    public function __construct(private readonly ImageIntakeService $images) {}
+
     public function extract(Book $book): AiRun
     {
         $book->loadMissing(['images', 'fields']);
@@ -56,6 +58,14 @@ class TitlePageAiExtractionService
             $image = $book->images->firstWhere('role', 'title_page') ?? $book->images->first();
             if (! $image) {
                 throw new RuntimeException('Aucune image de page de titre trouvée.');
+            }
+
+            if (blank($image->optimized_path)) {
+                $optimizedPath = $this->images->optimizeStoredImage($image->original_path);
+                if ($optimizedPath) {
+                    $image->update(['optimized_path' => $optimizedPath]);
+                    $image->optimized_path = $optimizedPath;
+                }
             }
 
             $payload = [

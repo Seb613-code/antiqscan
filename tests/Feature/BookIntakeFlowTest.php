@@ -39,6 +39,12 @@ class BookIntakeFlowTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('books', ['status' => 'uploaded']);
         $this->assertDatabaseHas('book_images', ['role' => 'title_page', 'sort_order' => 1]);
+
+        $image = \App\Models\BookImage::query()->firstOrFail();
+        $this->assertNotNull($image->optimized_path);
+        Storage::disk('local')->assertExists($image->optimized_path);
+        [$width, $height] = getimagesize(Storage::disk('local')->path($image->optimized_path));
+        $this->assertSame(1400, max($width, $height));
     }
 
     public function test_created_book_receives_editable_catalogue_fields(): void
@@ -317,6 +323,7 @@ class BookIntakeFlowTest extends TestCase
         ]);
 
         $book = \App\Models\Book::query()->firstOrFail();
+        $book->images()->update(['optimized_path' => null]);
 
         $book->fields()->where('field_key', 'publisher_address')->update([
             'value' => 'ancienne adresse à effacer',
@@ -350,6 +357,7 @@ class BookIntakeFlowTest extends TestCase
             'origin' => 'ai_visible',
             'is_validated' => false,
         ]);
+        $this->assertNotNull($book->images()->firstOrFail()->fresh()->optimized_path);
         $this->assertDatabaseMissing('book_fields', [
             'book_id' => $book->id,
             'field_key' => 'pagination',
