@@ -20,5 +20,13 @@ php artisan optimize:clear
 php artisan config:cache
 php artisan route:cache
 sudo systemctl restart antiqscan.service
+
+for i in {1..20}; do
+    if curl -fsS http://127.0.0.1:8090 >/dev/null; then
+        break
+    fi
+    sleep 1
+done
+
 curl -fsS https://antiqscan.vatinel.fr >/dev/null
 printf 'AntiQScan deployed OK\n'
