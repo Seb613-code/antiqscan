@@ -13,7 +13,8 @@ git pull --ff-only
 git archive HEAD | tar -x -C "$APP_DIR"
 
 cd "$APP_DIR"
-/home/hermes/.local/bin/composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+/home/hermes/.local/bin/composer install --no-dev --no-scripts --no-interaction --prefer-dist --optimize-autoloader
+php artisan package:discover --ansi
 php artisan migrate --force
 php artisan optimize:clear
 php artisan config:cache
