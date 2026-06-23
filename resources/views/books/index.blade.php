@@ -29,7 +29,7 @@
                             <a href="{{ route('books.show', $book) }}" class="rounded border px-3 py-2 text-sm">Ouvrir le dossier</a>
                             <form method="post" action="{{ route('books.extract.mock', $book) }}">
                                 @csrf
-                                <button type="submit" class="rounded bg-amber-700 px-3 py-2 text-sm font-semibold text-white">Lancer l’extraction</button>
+                                <button type="submit" class="rounded border border-black px-3 py-2 text-sm font-semibold text-black">Lancer l’extraction</button>
                             </form>
                         </div>
                     </div>
