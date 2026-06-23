@@ -318,6 +318,12 @@ class BookIntakeFlowTest extends TestCase
 
         $book = \App\Models\Book::query()->firstOrFail();
 
+        $book->fields()->where('field_key', 'publisher_address')->update([
+            'value' => 'ancienne adresse à effacer',
+            'origin' => 'user_validated',
+            'is_validated' => true,
+        ]);
+
         $this->post("/books/{$book->id}/extract/ai")
             ->assertRedirect("/books/{$book->id}");
 
@@ -348,6 +354,13 @@ class BookIntakeFlowTest extends TestCase
             'book_id' => $book->id,
             'field_key' => 'pagination',
             'value' => 'vii-238',
+        ]);
+        $this->assertDatabaseHas('book_fields', [
+            'book_id' => $book->id,
+            'field_key' => 'publisher_address',
+            'value' => null,
+            'origin' => 'ai_visible',
+            'is_validated' => false,
         ]);
         $this->assertDatabaseHas('ai_runs', [
             'book_id' => $book->id,

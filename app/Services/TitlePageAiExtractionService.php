@@ -95,6 +95,15 @@ class TitlePageAiExtractionService
             $parsed = $this->decodeStrictJson((string) $content);
             $fields = $this->allowedFields(data_get($parsed, 'fields', []));
 
+            $book->fields()
+                ->whereIn('field_key', self::ALLOWED_FIELDS)
+                ->update([
+                    'value' => null,
+                    'origin' => 'ai_visible',
+                    'confidence' => null,
+                    'is_validated' => false,
+                ]);
+
             foreach ($fields as $key => $value) {
                 $book->fields()->where('field_key', $key)->update([
                     'value' => $value,
