@@ -19,6 +19,14 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Page de titre');
     }
 
+    public function test_generated_urls_use_configured_public_app_url(): void
+    {
+        $this->get('/', ['HTTP_HOST' => '127.0.0.1:8090'])
+            ->assertOk()
+            ->assertSee('https://antiqscan.vatinel.fr/books', false)
+            ->assertDontSee('http://127.0.0.1:8090/books', false);
+    }
+
     public function test_user_can_create_book_from_one_title_page_image(): void
     {
         Storage::fake('local');
