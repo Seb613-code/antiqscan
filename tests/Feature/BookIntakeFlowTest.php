@@ -129,13 +129,27 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Sources')
             ->assertSee('Prix / estimation')
             ->assertSee('Étape 2 — lancer l’extraction test')
-            ->assertSee('Lancer extraction mock')
+            ->assertSee('Lancer l’extraction test')
             ->assertSee('1. Image importée')
             ->assertSee('2. Extraction visible')
             ->assertSee('3. Validation humaine')
             ->assertSee('La fiche finale affiche seulement les champs validés')
             ->assertSee('Auteur')
             ->assertSee('Format');
+    }
+
+    public function test_home_page_shows_extraction_button_for_existing_books(): void
+    {
+        Storage::fake('local');
+
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Lancer l’extraction test')
+            ->assertSee('Ouvrir le dossier');
     }
 
     public function test_mock_extraction_fills_mouchot_visible_fields_without_validation(): void

@@ -31,7 +31,7 @@
         <p class="mt-2 text-sm text-stone-700">Clique ici pour remplir automatiquement les champs visibles avec l’exemple Mouchot. Tu pourras ensuite corriger et valider.</p>
         <form method="post" action="{{ route('books.extract.mock', $book) }}" class="mt-4">
             @csrf
-            <button class="w-full rounded bg-amber-700 px-4 py-3 text-lg font-semibold text-white md:w-auto">Lancer extraction mock</button>
+            <button class="w-full rounded bg-amber-700 px-4 py-3 text-lg font-semibold text-white md:w-auto">Lancer l’extraction test</button>
         </form>
     </section>
 

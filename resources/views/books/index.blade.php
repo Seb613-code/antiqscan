@@ -19,11 +19,21 @@
         <h2 class="text-xl font-medium">Dossiers</h2>
         <div class="mt-3 divide-y rounded border bg-white">
             @forelse($books as $book)
-                <a href="{{ route('books.show', $book) }}" class="block p-4 hover:bg-stone-50">
-                    <span class="font-medium">#{{ $book->id }}</span>
-                    <span class="ml-2 text-stone-600">{{ $book->working_title ?? 'Titre à confirmer' }}</span>
-                    <span class="float-right text-sm text-stone-500">{{ $book->status }}</span>
-                </a>
+                <div class="p-4">
+                    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <p class="font-medium">#{{ $book->id }} — {{ $book->working_title ?? 'Titre à confirmer' }}</p>
+                            <p class="text-sm text-stone-500">Statut : {{ $book->status }}</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ route('books.show', $book) }}" class="rounded border px-3 py-2 text-sm">Ouvrir le dossier</a>
+                            <form method="post" action="{{ route('books.extract.mock', $book) }}">
+                                @csrf
+                                <button class="rounded bg-amber-700 px-3 py-2 text-sm font-semibold text-white">Lancer l’extraction test</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             @empty
                 <p class="p-4 text-stone-600">Aucun dossier pour l’instant.</p>
             @endforelse
