@@ -129,6 +129,10 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Sources')
             ->assertSee('Prix / estimation')
             ->assertSee('Lancer extraction mock')
+            ->assertSee('1. Image importée')
+            ->assertSee('2. Extraction visible')
+            ->assertSee('3. Validation humaine')
+            ->assertSee('La fiche finale affiche seulement les champs validés')
             ->assertSee('Auteur')
             ->assertSee('Format');
     }
