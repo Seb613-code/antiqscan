@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -161,7 +162,8 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Sources')
             ->assertSee('Prix / estimation')
             ->assertSee('Étape 2 — lancer l’extraction')
-            ->assertSee('Lancer l’extraction')
+            ->assertSee('Lancer l’extraction IA réelle')
+            ->assertSee('Tester avec le mock Mouchot')
             ->assertSee('Valider les champs remplis')
             ->assertSee('1. Image importée')
             ->assertSee('2. Extraction visible')
@@ -279,6 +281,81 @@ class BookIntakeFlowTest extends TestCase
             'book_id' => $book->id,
             'field_key' => 'pagination',
             'value' => 'in-8',
+        ]);
+    }
+
+    public function test_real_ai_extraction_uses_strict_json_and_only_updates_allowed_visible_fields(): void
+    {
+        config([
+            'services.antiqscan_ai.base_url' => 'https://api.mammouth.ai/v1',
+            'services.antiqscan_ai.api_key' => 'test-key',
+            'services.antiqscan_ai.model' => 'gemini-2.5-flash-lite',
+            'services.antiqscan_ai.max_output_tokens' => 450,
+        ]);
+        Http::fake([
+            'api.mammouth.ai/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode([
+                            'fields' => [
+                                'author' => 'A. Mouchot',
+                                'title' => 'La chaleur solaire et ses applications industrielles',
+                                'publication_date' => '1869',
+                                'pagination' => 'vii-238',
+                                'price' => '999 €',
+                            ],
+                        ]),
+                    ],
+                ]],
+                'usage' => ['prompt_tokens' => 1200, 'completion_tokens' => 120],
+            ], 200),
+        ]);
+        Storage::fake('local');
+
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
+        ]);
+
+        $book = \App\Models\Book::query()->firstOrFail();
+
+        $this->post("/books/{$book->id}/extract/ai")
+            ->assertRedirect("/books/{$book->id}");
+
+        Http::assertSent(fn ($request) =>
+            $request->url() === 'https://api.mammouth.ai/v1/chat/completions'
+            && $request['model'] === 'gemini-2.5-flash-lite'
+            && $request['max_tokens'] === 450
+            && $request['messages'][0]['content'][0]['type'] === 'text'
+            && str_contains($request['messages'][0]['content'][0]['text'], 'Réponds uniquement en JSON strict')
+            && $request['messages'][0]['content'][1]['type'] === 'image_url'
+            && str_starts_with($request['messages'][0]['content'][1]['image_url']['url'], 'data:image/')
+        );
+        $this->assertDatabaseHas('book_fields', [
+            'book_id' => $book->id,
+            'field_key' => 'author',
+            'value' => 'A. Mouchot',
+            'origin' => 'ai_visible',
+            'is_validated' => false,
+        ]);
+        $this->assertDatabaseHas('book_fields', [
+            'book_id' => $book->id,
+            'field_key' => 'publication_date',
+            'value' => '1869',
+            'origin' => 'ai_visible',
+            'is_validated' => false,
+        ]);
+        $this->assertDatabaseMissing('book_fields', [
+            'book_id' => $book->id,
+            'field_key' => 'pagination',
+            'value' => 'vii-238',
+        ]);
+        $this->assertDatabaseHas('ai_runs', [
+            'book_id' => $book->id,
+            'provider' => 'mammouth',
+            'model' => 'gemini-2.5-flash-lite',
+            'status' => 'succeeded',
+            'input_tokens' => 1200,
+            'output_tokens' => 120,
         ]);
     }
 }

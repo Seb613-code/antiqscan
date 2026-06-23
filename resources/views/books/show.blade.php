@@ -28,11 +28,17 @@
 
     <section class="mt-6 rounded border-2 border-amber-500 bg-amber-50 p-5">
         <h2 class="text-xl font-semibold">Étape 2 — lancer l’extraction</h2>
-        <p class="mt-2 text-sm text-stone-700">Clique ici pour remplir automatiquement les champs visibles. Pour l’instant, le fournisseur actif est le mock Mouchot.</p>
-        <form method="post" action="{{ route('books.extract.mock', $book) }}" class="mt-4">
-            @csrf
-            <button type="submit" class="w-full rounded border border-black px-4 py-3 text-lg font-semibold text-black md:w-auto">Lancer l’extraction</button>
-        </form>
+        <p class="mt-2 text-sm text-stone-700">Clique ici pour remplir automatiquement les champs visibles. L’extraction IA réelle reste stricte : rien de déduit, rien de physique, rien de prix.</p>
+        <div class="mt-4 flex flex-col gap-3 md:flex-row">
+            <form method="post" action="{{ route('books.extract.ai', $book) }}">
+                @csrf
+                <button type="submit" class="w-full rounded border border-black bg-white px-4 py-3 text-lg font-semibold text-black md:w-auto">Lancer l’extraction IA réelle</button>
+            </form>
+            <form method="post" action="{{ route('books.extract.mock', $book) }}">
+                @csrf
+                <button type="submit" class="w-full rounded border px-4 py-3 text-lg font-semibold text-stone-700 md:w-auto">Tester avec le mock Mouchot</button>
+            </form>
+        </div>
     </section>
 
     <section class="mt-6 rounded border bg-white p-5">

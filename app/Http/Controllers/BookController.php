@@ -6,6 +6,7 @@ use App\Models\AiRun;
 use App\Models\Book;
 use App\Services\CatalogueSheetRenderer;
 use App\Services\ImageIntakeService;
+use App\Services\TitlePageAiExtractionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -205,6 +206,13 @@ class BookController extends Controller
         ]);
 
         $book->update(['status' => 'extracted']);
+
+        return redirect()->route('books.show', $book);
+    }
+
+    public function extractAi(Book $book, TitlePageAiExtractionService $extractor): RedirectResponse
+    {
+        $extractor->extract($book);
 
         return redirect()->route('books.show', $book);
     }
