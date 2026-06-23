@@ -379,4 +379,57 @@ class BookIntakeFlowTest extends TestCase
             'output_tokens' => 120,
         ]);
     }
+
+    public function test_repeated_ai_extraction_reuses_cache_without_second_api_call(): void
+    {
+        config([
+            'services.antiqscan_ai.base_url' => 'https://api.mammouth.ai/v1',
+            'services.antiqscan_ai.api_key' => 'test-key',
+            'services.antiqscan_ai.model' => 'gemini-2.5-flash-lite',
+            'services.antiqscan_ai.max_output_tokens' => 450,
+        ]);
+        Http::fake([
+            'api.mammouth.ai/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode([
+                            'fields' => [
+                                'title' => 'Titre extrait une seule fois',
+                                'place' => 'Paris',
+                            ],
+                        ]),
+                    ],
+                ]],
+                'usage' => ['prompt_tokens' => 900, 'completion_tokens' => 50],
+            ], 200),
+        ]);
+        Storage::fake('local');
+
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
+        ]);
+
+        $book = \App\Models\Book::query()->firstOrFail();
+
+        $this->post("/books/{$book->id}/extract/ai")->assertRedirect("/books/{$book->id}");
+        $book->fields()->where('field_key', 'title')->update(['value' => 'à remplacer depuis cache']);
+        $this->post("/books/{$book->id}/extract/ai")->assertRedirect("/books/{$book->id}");
+
+        Http::assertSentCount(1);
+        $firstRun = \App\Models\AiRun::query()->where('status', 'succeeded')->firstOrFail();
+        $this->assertDatabaseHas('ai_runs', [
+            'book_id' => $book->id,
+            'status' => 'cached',
+            'cached_from_ai_run_id' => $firstRun->id,
+            'input_tokens' => 0,
+            'output_tokens' => 0,
+        ]);
+        $this->assertDatabaseHas('book_fields', [
+            'book_id' => $book->id,
+            'field_key' => 'title',
+            'value' => 'Titre extrait une seule fois',
+            'origin' => 'ai_visible',
+            'is_validated' => false,
+        ]);
+    }
 }

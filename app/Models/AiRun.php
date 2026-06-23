@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class AiRun extends Model
 {
     protected $fillable = [
-        'book_id', 'run_type', 'provider', 'model', 'input_tokens', 'output_tokens',
-        'estimated_cost', 'status', 'prompt', 'response', 'validation_errors',
-        'started_at', 'finished_at',
+        'book_id', 'run_type', 'provider', 'model', 'image_hash', 'cache_key',
+        'cached_from_ai_run_id', 'input_tokens', 'output_tokens', 'estimated_cost',
+        'status', 'prompt', 'response', 'validation_errors', 'started_at', 'finished_at',
     ];
 
     protected function casts(): array

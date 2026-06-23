@@ -10,6 +10,8 @@ use RuntimeException;
 
 class TitlePageAiExtractionService
 {
+    private const PROMPT_VERSION = 'visible-title-page-v1';
+
     private const ALLOWED_FIELDS = [
         'author',
         'title',
@@ -43,7 +45,7 @@ class TitlePageAiExtractionService
             'model' => $model,
             'status' => 'running',
             'prompt' => [
-                'version' => 'visible-title-page-v1',
+                'version' => self::PROMPT_VERSION,
                 'text' => $prompt,
                 'allowed_fields' => self::ALLOWED_FIELDS,
             ],
@@ -68,6 +70,46 @@ class TitlePageAiExtractionService
                 }
             }
 
+            $imagePath = $image->optimized_path ?: $image->original_path;
+            $imageHash = hash_file('sha256', Storage::disk('local')->path($imagePath));
+            $cacheKey = hash('sha256', implode('|', [$provider, $model, self::PROMPT_VERSION, $imageHash]));
+
+            $run->update([
+                'image_hash' => $imageHash,
+                'cache_key' => $cacheKey,
+            ]);
+
+            $cachedRun = AiRun::query()
+                ->where('run_type', 'title_page_extraction')
+                ->where('status', 'succeeded')
+                ->where('cache_key', $cacheKey)
+                ->whereKeyNot($run->id)
+                ->latest()
+                ->first();
+
+            if ($cachedRun) {
+                $parsed = data_get($cachedRun->response, 'parsed', []);
+                $fields = $this->allowedFields(data_get($parsed, 'fields', []));
+                $this->applyFields($book, $fields);
+                $book->update(['status' => 'extracted']);
+
+                $run->update([
+                    'cached_from_ai_run_id' => $cachedRun->id,
+                    'input_tokens' => 0,
+                    'output_tokens' => 0,
+                    'estimated_cost' => 0,
+                    'status' => 'cached',
+                    'response' => [
+                        'cached_from_ai_run_id' => $cachedRun->id,
+                        'parsed' => $parsed,
+                        'accepted_fields' => array_keys($fields),
+                    ],
+                    'finished_at' => now(),
+                ]);
+
+                return $run->fresh();
+            }
+
             $payload = [
                 'model' => $model,
                 'max_tokens' => $maxOutputTokens,
@@ -82,7 +124,7 @@ class TitlePageAiExtractionService
                         [
                             'type' => 'image_url',
                             'image_url' => [
-                                'url' => $this->imageAsDataUrl($image->optimized_path ?: $image->original_path),
+                                'url' => $this->imageAsDataUrl($imagePath),
                             ],
                         ],
                     ],
@@ -105,23 +147,7 @@ class TitlePageAiExtractionService
             $parsed = $this->decodeStrictJson((string) $content);
             $fields = $this->allowedFields(data_get($parsed, 'fields', []));
 
-            $book->fields()
-                ->whereIn('field_key', self::ALLOWED_FIELDS)
-                ->update([
-                    'value' => null,
-                    'origin' => 'ai_visible',
-                    'confidence' => null,
-                    'is_validated' => false,
-                ]);
-
-            foreach ($fields as $key => $value) {
-                $book->fields()->where('field_key', $key)->update([
-                    'value' => $value,
-                    'origin' => 'ai_visible',
-                    'confidence' => null,
-                    'is_validated' => false,
-                ]);
-            }
+            $this->applyFields($book, $fields);
 
             $book->update(['status' => 'extracted']);
 
@@ -195,5 +221,26 @@ class TitlePageAiExtractionService
         }
 
         return array_filter($accepted, fn ($value) => filled($value));
+    }
+
+    private function applyFields(Book $book, array $fields): void
+    {
+        $book->fields()
+            ->whereIn('field_key', self::ALLOWED_FIELDS)
+            ->update([
+                'value' => null,
+                'origin' => 'ai_visible',
+                'confidence' => null,
+                'is_validated' => false,
+            ]);
+
+        foreach ($fields as $key => $value) {
+            $book->fields()->where('field_key', $key)->update([
+                'value' => $value,
+                'origin' => 'ai_visible',
+                'confidence' => null,
+                'is_validated' => false,
+            ]);
+        }
     }
 }
