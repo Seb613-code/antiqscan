@@ -41,6 +41,7 @@ return [
         'api_key' => env('ANTIQSCAN_AI_API_KEY', env('MAMMOUTH_API_KEY')),
         'model' => env('ANTIQSCAN_AI_MODEL', 'gemini-2.5-flash-lite'),
         'max_output_tokens' => (int) env('ANTIQSCAN_AI_MAX_OUTPUT_TOKENS', 450),
+        'show_run_debug' => (bool) env('ANTIQSCAN_AI_SHOW_RUN_DEBUG', false),
     ],
 
 ];

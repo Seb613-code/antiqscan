@@ -41,6 +41,62 @@
         </div>
     </section>
 
+    @if($showAiRunDebug)
+        @php
+            $lastAiRun = $book->aiRuns->first();
+        @endphp
+        <section class="mt-6 rounded border border-purple-300 bg-purple-50 p-5 text-sm text-purple-950">
+            <div class="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold">Diagnostic IA — phase de test</h2>
+                    <p class="mt-1 text-purple-800">Visible seulement si le flag serveur de debug IA est activé.</p>
+                </div>
+                @if($lastAiRun)
+                    <span class="rounded bg-white px-3 py-1 font-mono text-xs">run #{{ $lastAiRun->id }}</span>
+                @endif
+            </div>
+
+            @if($lastAiRun)
+                <dl class="mt-4 grid gap-3 md:grid-cols-3">
+                    <div class="rounded bg-white p-3">
+                        <dt class="font-medium">Statut</dt>
+                        <dd class="mt-1 font-mono">{{ $lastAiRun->status }}</dd>
+                    </div>
+                    <div class="rounded bg-white p-3">
+                        <dt class="font-medium">Modèle</dt>
+                        <dd class="mt-1 font-mono">{{ $lastAiRun->provider ?? '—' }} / {{ $lastAiRun->model ?? '—' }}</dd>
+                    </div>
+                    <div class="rounded bg-white p-3">
+                        <dt class="font-medium">Tokens</dt>
+                        <dd class="mt-1 font-mono">{{ $lastAiRun->input_tokens ?? 0 }} in / {{ $lastAiRun->output_tokens ?? 0 }} out</dd>
+                    </div>
+                    <div class="rounded bg-white p-3">
+                        <dt class="font-medium">Cache</dt>
+                        <dd class="mt-1 font-mono">
+                            @if($lastAiRun->status === 'cached')
+                                oui, depuis #{{ $lastAiRun->cached_from_ai_run_id }}
+                            @else
+                                appel réel
+                            @endif
+                        </dd>
+                    </div>
+                    <div class="rounded bg-white p-3 md:col-span-2">
+                        <dt class="font-medium">Hash cache</dt>
+                        <dd class="mt-1 break-all font-mono text-xs">{{ $lastAiRun->cache_key ? substr($lastAiRun->cache_key, 0, 24).'…' : '—' }}</dd>
+                    </div>
+                </dl>
+                @if($lastAiRun->validation_errors)
+                    <div class="mt-3 rounded border border-red-200 bg-red-50 p-3 text-red-900">
+                        <p class="font-medium">Erreur</p>
+                        <pre class="mt-2 whitespace-pre-wrap text-xs">{{ json_encode($lastAiRun->validation_errors, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                    </div>
+                @endif
+            @else
+                <p class="mt-4 rounded bg-white p-3">Aucun run IA enregistré pour ce dossier.</p>
+            @endif
+        </section>
+    @endif
+
     <section class="mt-6 rounded border bg-white p-5">
         <h2 class="text-lg font-medium">Image</h2>
         <ul class="mt-3 list-disc pl-5 text-sm text-stone-700">

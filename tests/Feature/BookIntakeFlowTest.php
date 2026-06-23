@@ -380,6 +380,41 @@ class BookIntakeFlowTest extends TestCase
         ]);
     }
 
+    public function test_ai_run_debug_panel_is_hidden_by_default_and_visible_when_enabled(): void
+    {
+        Storage::fake('local');
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 800, 1200),
+        ]);
+        $book = \App\Models\Book::query()->firstOrFail();
+        $book->aiRuns()->create([
+            'run_type' => 'title_page_extraction',
+            'provider' => 'mammouth',
+            'model' => 'gemini-2.5-flash-lite',
+            'status' => 'cached',
+            'input_tokens' => 0,
+            'output_tokens' => 0,
+            'cache_key' => str_repeat('a', 64),
+            'cached_from_ai_run_id' => null,
+            'started_at' => now(),
+            'finished_at' => now(),
+        ]);
+
+        config(['services.antiqscan_ai.show_run_debug' => false]);
+        $this->get("/books/{$book->id}")
+            ->assertOk()
+            ->assertDontSee('Diagnostic IA — phase de test')
+            ->assertDontSee('gemini-2.5-flash-lite');
+
+        config(['services.antiqscan_ai.show_run_debug' => true]);
+        $this->get("/books/{$book->id}")
+            ->assertOk()
+            ->assertSee('Diagnostic IA — phase de test')
+            ->assertSee('gemini-2.5-flash-lite')
+            ->assertSee('0 in / 0 out')
+            ->assertSee('cached');
+    }
+
     public function test_repeated_ai_extraction_reuses_cache_without_second_api_call(): void
     {
         config([

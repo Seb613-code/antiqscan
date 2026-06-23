@@ -99,7 +99,8 @@ class BookController extends Controller
     public function show(Book $book): View
     {
         return view('books.show', [
-            'book' => $book->load(['images', 'fields', 'sources', 'priceObservations']),
+            'book' => $book->load(['images', 'fields', 'sources', 'priceObservations', 'aiRuns' => fn ($query) => $query->latest()->limit(1)]),
+            'showAiRunDebug' => (bool) config('services.antiqscan_ai.show_run_debug', false),
         ]);
     }
 
