@@ -38,7 +38,7 @@ class BookIntakeFlowTest extends TestCase
                             'publisher' => 'Gauthier-villars',
                             'place' => 'Paris',
                             'publication_date' => '1869',
-                            'academic_notice' => 'Notice factuelle sourcée.',
+                            'academic_notice' => 'Notice factuelle sourcée [1].',
                             'sources' => [[
                                 'title' => 'BnF notice',
                                 'url' => 'https://catalogue.bnf.fr/ark:/12148/cb00000000',
@@ -226,7 +226,9 @@ class BookIntakeFlowTest extends TestCase
             ->assertDontSee('Tester avec le mock Mouchot')
             ->assertDontSee('1. Image importée')
             ->assertSee('Auteur')
-            ->assertSee('Format');
+            ->assertSee('Format')
+            ->assertSee('Collation')
+            ->assertDontSee('Pagination');
     }
 
     public function test_validate_filled_action_validates_only_non_empty_fields(): void

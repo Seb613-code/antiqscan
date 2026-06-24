@@ -114,7 +114,7 @@ class TitlePageEnrichmentService
             'publisher : nom complet indiqué, en minuscule sauf première lettre des noms propres en majuscule.',
             'place : ville d’édition mentionnée.',
             'publication_date : chiffres arabes. Si la date est déduite par recherche et non visible dans le JSON vision, mets-la entre crochets [].',
-            'academic_notice : description factuelle du sujet et de la portée de l’ouvrage, sourcée par des références fiables.',
+            'academic_notice : description factuelle du sujet et de la portée de l’ouvrage, sourcée par des références fiables. N’insère jamais de références entre crochets de type [1], [2], [3] ou [source].',
             'sources : références fiables utilisées, par priorité bibliothèques nationales, universités, catalogues collectifs, encyclopédies reconnues.',
             'Ne modifie pas les faits visibles sans raison sourcée.',
             'Si une donnée reste inconnue malgré recherche, mets null.',
@@ -170,7 +170,7 @@ class TitlePageEnrichmentService
 
         $book->update([
             'working_title' => filled(data_get($parsed, 'display_title')) ? trim((string) data_get($parsed, 'display_title')) : $book->working_title,
-            'catalogue_note' => filled(data_get($parsed, 'academic_notice')) ? trim((string) data_get($parsed, 'academic_notice')) : $book->catalogue_note,
+            'catalogue_note' => filled(data_get($parsed, 'academic_notice')) ? $this->cleanAcademicNotice((string) data_get($parsed, 'academic_notice')) : $book->catalogue_note,
         ]);
 
         foreach ((array) data_get($parsed, 'sources', []) as $source) {
@@ -187,5 +187,10 @@ class TitlePageEnrichmentService
                 'user_approved' => false,
             ]);
         }
+    }
+
+    private function cleanAcademicNotice(string $notice): string
+    {
+        return trim((string) preg_replace('/\s*\[[^\]]+\]/u', '', $notice));
     }
 }

@@ -129,7 +129,7 @@ class BookController extends Controller
         return [
             'format' => 'Format',
             'dimensions' => 'Dimensions',
-            'pagination' => 'Pagination',
+            'pagination' => 'Collation',
             'binding' => 'Reliure',
             'condition' => 'État',
             'copy_notes' => 'Particularités d’exemplaire',
