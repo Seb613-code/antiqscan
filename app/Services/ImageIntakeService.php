@@ -54,6 +54,11 @@ class ImageIntakeService
             return null;
         }
 
+        $source = $this->applyExifOrientation($source, $absolutePath);
+        if ($this->swapsDimensionsForExifOrientation($absolutePath)) {
+            [$width, $height] = [$height, $width];
+        }
+
         $scale = min(1, self::MAX_DIMENSION / max($width, $height));
         $targetWidth = max(1, (int) round($width * $scale));
         $targetHeight = max(1, (int) round($height * $scale));
@@ -83,5 +88,44 @@ class ImageIntakeService
             'image/webp' => @imagecreatefromwebp($absolutePath),
             default => false,
         };
+    }
+
+    private function applyExifOrientation(\GdImage $image, string $absolutePath): \GdImage
+    {
+        $orientation = $this->exifOrientation($absolutePath);
+
+        $oriented = match ($orientation) {
+            3 => imagerotate($image, 180, 0),
+            6 => imagerotate($image, 270, 0),
+            8 => imagerotate($image, 90, 0),
+            default => $image,
+        };
+
+        if ($oriented !== $image) {
+            imagedestroy($image);
+        }
+
+        return $oriented ?: $image;
+    }
+
+    private function swapsDimensionsForExifOrientation(string $absolutePath): bool
+    {
+        return in_array($this->exifOrientation($absolutePath), [5, 6, 7, 8], true);
+    }
+
+    private function exifOrientation(string $absolutePath): ?int
+    {
+        if (! function_exists('exif_read_data')) {
+            return null;
+        }
+
+        $info = @getimagesize($absolutePath);
+        if (($info['mime'] ?? null) !== 'image/jpeg') {
+            return null;
+        }
+
+        $exif = @exif_read_data($absolutePath);
+
+        return isset($exif['Orientation']) ? (int) $exif['Orientation'] : null;
     }
 }
