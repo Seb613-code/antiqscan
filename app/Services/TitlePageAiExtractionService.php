@@ -181,7 +181,6 @@ class TitlePageAiExtractionService
             'Schéma exact : {"fields":{"author":null,"title":null,"subtitle":null,"place":null,"publisher":null,"publisher_address":null,"publication_date":null,"illustration_statement":null,"edition_statement":null,"visible_notes":null}}',
             'Règles absolues : extrais seulement ce qui est visible/lisible sur l’image.',
             'Ne déduis pas, n’enrichis pas, ne complète pas depuis ta culture générale.',
-            'Interdit : format, dimensions, pagination, reliure, état, édition originale, prix, notice historique.',
             'Si un champ n’est pas visible, mets null.',
             'Garde une formulation sobre et factuelle.',
         ]);
