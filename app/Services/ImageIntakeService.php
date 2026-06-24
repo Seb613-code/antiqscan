@@ -49,8 +49,6 @@ class ImageIntakeService
 
         [$width, $height] = $this->dimensions($originalPath);
         if (! $width || ! $height) {
-            imagedestroy($source);
-
             return null;
         }
 
@@ -70,9 +68,6 @@ class ImageIntakeService
         $optimizedPath = 'books/optimized/'.pathinfo($originalPath, PATHINFO_FILENAME).'.jpg';
         Storage::disk('local')->makeDirectory('books/optimized');
         $written = imagejpeg($target, Storage::path($optimizedPath), self::JPEG_QUALITY);
-
-        imagedestroy($source);
-        imagedestroy($target);
 
         return $written ? $optimizedPath : null;
     }
@@ -100,10 +95,6 @@ class ImageIntakeService
             8 => imagerotate($image, 90, 0),
             default => $image,
         };
-
-        if ($oriented !== $image) {
-            imagedestroy($image);
-        }
 
         return $oriented ?: $image;
     }
