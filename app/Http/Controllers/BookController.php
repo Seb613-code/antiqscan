@@ -61,7 +61,7 @@ class BookController extends Controller
         return redirect()->route('books.index')->with('status', 'Fiche supprimée.');
     }
 
-    public function image(BookImage $bookImage): Response
+    public function image(BookImage $bookImage)
     {
         $path = $bookImage->optimized_path ?: $bookImage->original_path;
 
