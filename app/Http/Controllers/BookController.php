@@ -150,23 +150,14 @@ class BookController extends Controller
             'fields' => ['array'],
             'fields.*.label' => ['required', 'string', 'max:120'],
             'fields.*.value' => ['nullable', 'string'],
-            'fields.*.is_validated' => ['nullable', 'boolean'],
             'catalogue_note' => ['nullable', 'string'],
-            'action' => ['nullable', 'string', 'in:save,validate_filled'],
         ]);
 
-        $validateFilled = ($validated['action'] ?? 'save') === 'validate_filled';
-
         foreach ($validated['fields'] ?? [] as $id => $fieldData) {
-            $value = $fieldData['value'] ?? null;
-            $isValidated = $validateFilled
-                ? filled($value)
-                : (bool) ($fieldData['is_validated'] ?? false);
-
             $book->fields()->whereKey($id)->where('is_editable', true)->update([
                 'label' => $fieldData['label'],
-                'value' => $value,
-                'is_validated' => $isValidated,
+                'value' => $fieldData['value'] ?? null,
+                'is_validated' => filled($fieldData['value'] ?? null),
                 'origin' => 'user_validated',
             ]);
         }
@@ -177,7 +168,7 @@ class BookController extends Controller
             'user_validated_at' => now(),
         ]);
 
-        return back();
+        return back()->with('status', 'Modifications enregistrées.');
     }
 
     public function catalogue(Book $book, CatalogueSheetRenderer $renderer): View

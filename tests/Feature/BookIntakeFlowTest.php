@@ -220,7 +220,13 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Champs physiques manuels')
             ->assertSee('Sources')
             ->assertSee('Prix / estimation')
-            ->assertSee('Valider les champs remplis')
+            ->assertSee('Enregistrer les modifications')
+            ->assertDontSee('Valider les champs remplis')
+            ->assertDontSee('Enregistrer les validations')
+            ->assertDontSee('Export Markdown')
+            ->assertDontSee('Export JSON')
+            ->assertDontSee('ai_enriched')
+            ->assertDontSee('type="checkbox"', false)
             ->assertDontSee('Étape 2 — lancer l’extraction')
             ->assertDontSee('Lancer l’extraction IA réelle')
             ->assertDontSee('Tester avec le mock Mouchot')
@@ -231,7 +237,7 @@ class BookIntakeFlowTest extends TestCase
             ->assertDontSee('Pagination');
     }
 
-    public function test_validate_filled_action_validates_only_non_empty_fields(): void
+    public function test_saving_book_form_records_editable_fields_without_validation_checkboxes(): void
     {
         Storage::fake('local');
 
@@ -244,7 +250,6 @@ class BookIntakeFlowTest extends TestCase
         $subtitle = $book->fields()->where('field_key', 'subtitle')->firstOrFail();
 
         $this->put("/books/{$book->id}/fields", [
-            'action' => 'validate_filled',
             'catalogue_note' => 'Notice corrigée par utilisateur.',
             'fields' => [
                 $title->id => [
