@@ -215,6 +215,8 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('height="300"', false)
             ->assertSee('object-contain')
             ->assertSee('Champs visibles sur page de titre')
+            ->assertSee('Notice')
+            ->assertSee('Notice factuelle sourcée.')
             ->assertSee('Champs physiques manuels')
             ->assertSee('Sources')
             ->assertSee('Prix / estimation')
@@ -241,6 +243,7 @@ class BookIntakeFlowTest extends TestCase
 
         $this->put("/books/{$book->id}/fields", [
             'action' => 'validate_filled',
+            'catalogue_note' => 'Notice corrigée par utilisateur.',
             'fields' => [
                 $title->id => [
                     'label' => 'Titre',
@@ -262,6 +265,10 @@ class BookIntakeFlowTest extends TestCase
             'id' => $subtitle->id,
             'value' => null,
             'is_validated' => false,
+        ]);
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'catalogue_note' => 'Notice corrigée par utilisateur.',
         ]);
     }
 

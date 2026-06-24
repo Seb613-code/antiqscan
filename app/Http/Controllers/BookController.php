@@ -151,6 +151,7 @@ class BookController extends Controller
             'fields.*.label' => ['required', 'string', 'max:120'],
             'fields.*.value' => ['nullable', 'string'],
             'fields.*.is_validated' => ['nullable', 'boolean'],
+            'catalogue_note' => ['nullable', 'string'],
             'action' => ['nullable', 'string', 'in:save,validate_filled'],
         ]);
 
@@ -170,7 +171,11 @@ class BookController extends Controller
             ]);
         }
 
-        $book->update(['status' => 'validated', 'user_validated_at' => now()]);
+        $book->update([
+            'catalogue_note' => $validated['catalogue_note'] ?? null,
+            'status' => 'validated',
+            'user_validated_at' => now(),
+        ]);
 
         return back();
     }

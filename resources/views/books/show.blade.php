@@ -74,6 +74,15 @@
                 </div>
             </div>
 
+            <div class="rounded border border-emerald-200 bg-emerald-50 p-4">
+                <h3 class="font-medium">Notice</h3>
+                <p class="mt-1 text-sm text-stone-600">Notice académique générée par l’étape 2, modifiable avant validation.</p>
+                <label class="mt-3 block text-sm">
+                    <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-stone-500">Notice</span>
+                    <textarea name="catalogue_note" rows="7" class="w-full rounded border p-2">{{ old('catalogue_note', $book->catalogue_note) }}</textarea>
+                </label>
+            </div>
+
             <div class="rounded border border-blue-200 bg-blue-50 p-4">
                 <h3 class="font-medium">Champs physiques manuels</h3>
                 <p class="mt-1 text-sm text-stone-600">À saisir à la main : format, dimensions, pagination, reliure, état.</p>
