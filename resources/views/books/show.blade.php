@@ -1,50 +1,25 @@
 <x-layout>
-    <a href="{{ route('books.index') }}" class="text-sm text-stone-600">← Retour aux dossiers</a>
-
-    <header class="mt-4 mb-6 rounded border bg-white p-5">
-        <p class="text-sm uppercase tracking-wide text-stone-500">Dossier #{{ $book->id }}</p>
-        <h1 class="mt-1 text-2xl font-semibold">Construire une fiche catalogue</h1>
-        <p class="mt-2 text-stone-600">Statut : {{ $book->status }}</p>
-    </header>
+    <a href="{{ route('books.index') }}" class="text-sm text-stone-600">← Retour à la bibliothèque</a>
 
     @if(session('status'))
-        <div class="mb-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-900">{{ session('status') }}</div>
+        <div class="mt-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-900">{{ session('status') }}</div>
     @endif
     @if(session('error'))
-        <div class="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-900">{{ session('error') }}</div>
+        <div class="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-900">{{ session('error') }}</div>
     @endif
 
-    <section class="grid gap-3 md:grid-cols-4">
-        <div class="rounded border bg-white p-4">
-            <p class="font-medium">1. Image importée</p>
-            <p class="mt-1 text-sm text-stone-600">Vérifie que la page de titre est le bon fichier.</p>
-        </div>
-        <div class="rounded border bg-white p-4">
-            <p class="font-medium">2. Extraction visible</p>
-            <p class="mt-1 text-sm text-stone-600">Le mock remplit seulement ce qui est lisible sur l’image.</p>
-        </div>
-        <div class="rounded border bg-white p-4">
-            <p class="font-medium">3. Validation humaine</p>
-            <p class="mt-1 text-sm text-stone-600">Corrige les champs puis coche « validé ».</p>
-        </div>
-        <div class="rounded border bg-white p-4">
-            <p class="font-medium">4. Fiche finale</p>
-            <p class="mt-1 text-sm text-stone-600">La fiche finale affiche seulement les champs validés.</p>
-        </div>
-    </section>
-
-    <section class="mt-6 rounded border-2 border-amber-500 bg-amber-50 p-5">
-        <h2 class="text-xl font-semibold">Étape 2 — lancer l’extraction</h2>
-        <p class="mt-2 text-sm text-stone-700">Clique ici pour remplir automatiquement les champs visibles. L’extraction IA réelle reste stricte : rien de déduit, rien de physique, rien de prix.</p>
-        <div class="mt-4 flex flex-col gap-3 md:flex-row">
-            <form method="post" action="{{ route('books.extract.ai', $book) }}">
-                @csrf
-                <button type="submit" class="w-full rounded border border-black bg-white px-4 py-3 text-lg font-semibold text-black md:w-auto">Lancer l’extraction IA réelle</button>
-            </form>
-            <form method="post" action="{{ route('books.extract.mock', $book) }}">
-                @csrf
-                <button type="submit" class="w-full rounded border px-4 py-3 text-lg font-semibold text-stone-700 md:w-auto">Tester avec le mock Mouchot</button>
-            </form>
+    <section class="mt-6 rounded border bg-white p-5">
+        <h1 class="text-xl font-semibold">Fiche #{{ $book->id }}</h1>
+        <h2 class="mt-4 text-lg font-medium">Image</h2>
+        <div class="mt-3 space-y-4">
+            @forelse($book->images as $image)
+                <figure>
+                    <img src="{{ route('book-images.show', $image) }}" alt="Page de titre fiche {{ $book->id }}" height="300" style="height: 300px; max-height: 300px; width: auto; max-width: 100%;" class="block rounded border object-contain">
+                    <figcaption class="mt-2 text-sm text-stone-600">{{ $image->role }}</figcaption>
+                </figure>
+            @empty
+                <p class="text-sm text-stone-600">Aucune image associée.</p>
+            @endforelse
         </div>
     </section>
 
@@ -53,65 +28,18 @@
             $lastAiRun = $book->aiRuns->first();
         @endphp
         <section class="mt-6 rounded border border-purple-300 bg-purple-50 p-5 text-sm text-purple-950">
-            <div class="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h2 class="text-lg font-semibold">Diagnostic IA — phase de test</h2>
-                    <p class="mt-1 text-purple-800">Visible seulement si le flag serveur de debug IA est activé.</p>
-                </div>
-                @if($lastAiRun)
-                    <span class="rounded bg-white px-3 py-1 font-mono text-xs">run #{{ $lastAiRun->id }}</span>
-                @endif
-            </div>
-
+            <h2 class="text-lg font-semibold">Diagnostic IA — phase de test</h2>
             @if($lastAiRun)
-                <dl class="mt-4 grid gap-3 md:grid-cols-3">
-                    <div class="rounded bg-white p-3">
-                        <dt class="font-medium">Statut</dt>
-                        <dd class="mt-1 font-mono">{{ $lastAiRun->status }}</dd>
-                    </div>
-                    <div class="rounded bg-white p-3">
-                        <dt class="font-medium">Modèle</dt>
-                        <dd class="mt-1 font-mono">{{ $lastAiRun->provider ?? '—' }} / {{ $lastAiRun->model ?? '—' }}</dd>
-                    </div>
-                    <div class="rounded bg-white p-3">
-                        <dt class="font-medium">Tokens</dt>
-                        <dd class="mt-1 font-mono">{{ $lastAiRun->input_tokens ?? 0 }} in / {{ $lastAiRun->output_tokens ?? 0 }} out</dd>
-                    </div>
-                    <div class="rounded bg-white p-3">
-                        <dt class="font-medium">Cache</dt>
-                        <dd class="mt-1 font-mono">
-                            @if($lastAiRun->status === 'cached')
-                                oui, depuis #{{ $lastAiRun->cached_from_ai_run_id }}
-                            @else
-                                appel réel
-                            @endif
-                        </dd>
-                    </div>
-                    <div class="rounded bg-white p-3 md:col-span-2">
-                        <dt class="font-medium">Hash cache</dt>
-                        <dd class="mt-1 break-all font-mono text-xs">{{ $lastAiRun->cache_key ? substr($lastAiRun->cache_key, 0, 24).'…' : '—' }}</dd>
-                    </div>
-                </dl>
+                <p class="mt-2 font-mono">run #{{ $lastAiRun->id }} — {{ $lastAiRun->status }} — {{ $lastAiRun->provider ?? '—' }} / {{ $lastAiRun->model ?? '—' }}</p>
+                <p class="mt-1 font-mono">{{ $lastAiRun->input_tokens ?? 0 }} in / {{ $lastAiRun->output_tokens ?? 0 }} out</p>
                 @if($lastAiRun->validation_errors)
-                    <div class="mt-3 rounded border border-red-200 bg-red-50 p-3 text-red-900">
-                        <p class="font-medium">Erreur</p>
-                        <pre class="mt-2 whitespace-pre-wrap text-xs">{{ json_encode($lastAiRun->validation_errors, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
-                    </div>
+                    <pre class="mt-3 whitespace-pre-wrap rounded border border-red-200 bg-red-50 p-3 text-xs text-red-900">{{ json_encode($lastAiRun->validation_errors, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
                 @endif
             @else
-                <p class="mt-4 rounded bg-white p-3">Aucun run IA enregistré pour ce dossier.</p>
+                <p class="mt-2 rounded bg-white p-3">Aucun run IA enregistré pour ce dossier.</p>
             @endif
         </section>
     @endif
-
-    <section class="mt-6 rounded border bg-white p-5">
-        <h2 class="text-lg font-medium">Image</h2>
-        <ul class="mt-3 list-disc pl-5 text-sm text-stone-700">
-            @foreach($book->images as $image)
-                <li>{{ $image->role }} — {{ $image->original_path }}</li>
-            @endforeach
-        </ul>
-    </section>
 
     <section class="mt-6 rounded border bg-white p-5">
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -182,15 +110,9 @@
                         <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                             <div>
                                 <p class="font-medium">{{ $source->title ?: 'Source sans titre' }}</p>
-                                @if($source->citation)
-                                    <p class="mt-1 text-stone-700">{{ $source->citation }}</p>
-                                @endif
-                                @if($source->url)
-                                    <a class="mt-1 block break-all text-blue-700 underline" href="{{ $source->url }}" target="_blank" rel="noopener">{{ $source->url }}</a>
-                                @endif
-                                @if($source->notes)
-                                    <p class="mt-1 text-xs text-stone-500">{{ $source->notes }}</p>
-                                @endif
+                                @if($source->citation)<p class="mt-1 text-stone-700">{{ $source->citation }}</p>@endif
+                                @if($source->url)<a class="mt-1 block break-all text-blue-700 underline" href="{{ $source->url }}" target="_blank" rel="noopener">{{ $source->url }}</a>@endif
+                                @if($source->notes)<p class="mt-1 text-xs text-stone-500">{{ $source->notes }}</p>@endif
                             </div>
                             @if($source->user_approved)
                                 <span class="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">validée</span>

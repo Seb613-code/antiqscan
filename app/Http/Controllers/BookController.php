@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AiRun;
 use App\Models\Book;
 use App\Models\BookImage;
 use App\Models\BookSource;
@@ -26,7 +25,7 @@ class BookController extends Controller
         ]);
     }
 
-    public function store(Request $request, ImageIntakeService $images): RedirectResponse
+    public function store(Request $request, ImageIntakeService $images, TitlePageAiExtractionService $extractor): RedirectResponse
     {
         $validated = $request->validate([
             'title_page' => ['required', 'file', 'mimetypes:image/jpeg', 'mimes:jpg,jpeg', 'max:10240'],
@@ -41,6 +40,14 @@ class BookController extends Controller
         ]);
 
         $this->createCatalogueFields($book);
+
+        try {
+            $extractor->extract($book);
+        } catch (\Throwable $exception) {
+            return redirect()->route('books.index')
+                ->with('created_book_id', $book->id)
+                ->with('error', 'Fiche créée, mais extraction IA en erreur : '.$exception->getMessage());
+        }
 
         return redirect()->route('books.index')->with('created_book_id', $book->id);
     }
@@ -221,44 +228,6 @@ class BookController extends Controller
         abort_unless($source->book_id === $book->id, 404);
 
         $source->update(['user_approved' => true]);
-
-        return redirect()->route('books.show', $book);
-    }
-
-    public function extractMock(Book $book): RedirectResponse
-    {
-        $values = [
-            'author' => 'A. Mouchot',
-            'title' => 'La chaleur solaire et ses applications industrielles',
-            'illustration_statement' => '35 gravures intercalées dans le texte',
-            'place' => 'Paris',
-            'publisher' => 'Gauthier-Villars',
-            'publisher_address' => '55, Quai des Augustins, 55',
-            'publication_date' => '1869',
-        ];
-
-        foreach ($values as $key => $value) {
-            $book->fields()->where('field_key', $key)->update([
-                'value' => $value,
-                'origin' => 'ai_visible',
-                'confidence' => 1,
-                'is_validated' => false,
-            ]);
-        }
-
-        AiRun::create([
-            'book_id' => $book->id,
-            'run_type' => 'title_page_extraction',
-            'provider' => 'mock',
-            'model' => 'mouchot-fixture',
-            'status' => 'succeeded',
-            'prompt' => ['fixture' => 'mouchot'],
-            'response' => $values,
-            'started_at' => now(),
-            'finished_at' => now(),
-        ]);
-
-        $book->update(['status' => 'extracted']);
 
         return redirect()->route('books.show', $book);
     }

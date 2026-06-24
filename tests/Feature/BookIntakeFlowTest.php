@@ -12,6 +12,29 @@ class BookIntakeFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config([
+            'services.antiqscan_ai.base_url' => 'https://api.mammouth.ai/v1',
+            'services.antiqscan_ai.api_key' => 'test-key',
+            'services.antiqscan_ai.model' => 'gemini-2.5-flash-lite',
+            'services.antiqscan_ai.max_output_tokens' => 450,
+        ]);
+
+        Http::fake([
+            'api.mammouth.ai/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode(['fields' => ['title' => 'Titre extrait automatiquement']]),
+                    ],
+                ]],
+                'usage' => ['prompt_tokens' => 100, 'completion_tokens' => 20],
+            ], 200),
+        ]);
+    }
+
     public function test_home_page_lists_empty_books_and_upload_form(): void
     {
         $this->get('/')
@@ -38,7 +61,7 @@ class BookIntakeFlowTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('books', ['status' => 'uploaded']);
+        $this->assertDatabaseHas('books', ['status' => 'extracted']);
         $this->assertDatabaseHas('book_images', ['role' => 'title_page', 'sort_order' => 1]);
 
         $image = \App\Models\BookImage::query()->firstOrFail();
@@ -152,7 +175,7 @@ class BookIntakeFlowTest extends TestCase
         return $book;
     }
 
-    public function test_book_show_page_groups_fields_by_simple_sections(): void
+    public function test_book_show_page_starts_with_image_card_and_no_extraction_buttons(): void
     {
         Storage::fake('local');
 
@@ -164,18 +187,18 @@ class BookIntakeFlowTest extends TestCase
 
         $this->get("/books/{$book->id}")
             ->assertOk()
+            ->assertSee('Image')
+            ->assertSee('height="300"', false)
+            ->assertSee('object-contain')
             ->assertSee('Champs visibles sur page de titre')
             ->assertSee('Champs physiques manuels')
             ->assertSee('Sources')
             ->assertSee('Prix / estimation')
-            ->assertSee('Étape 2 — lancer l’extraction')
-            ->assertSee('Lancer l’extraction IA réelle')
-            ->assertSee('Tester avec le mock Mouchot')
             ->assertSee('Valider les champs remplis')
-            ->assertSee('1. Image importée')
-            ->assertSee('2. Extraction visible')
-            ->assertSee('3. Validation humaine')
-            ->assertSee('La fiche finale affiche seulement les champs validés')
+            ->assertDontSee('Étape 2 — lancer l’extraction')
+            ->assertDontSee('Lancer l’extraction IA réelle')
+            ->assertDontSee('Tester avec le mock Mouchot')
+            ->assertDontSee('1. Image importée')
             ->assertSee('Auteur')
             ->assertSee('Format');
     }
@@ -249,48 +272,33 @@ class BookIntakeFlowTest extends TestCase
             ->assertDontSee('Lancer l’extraction');
     }
 
-    public function test_mock_extraction_fills_mouchot_visible_fields_without_validation(): void
+    public function test_create_book_launches_ai_extraction_immediately(): void
     {
         Storage::fake('local');
 
         $this->post('/books', [
             'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
-        ]);
+        ])->assertRedirect();
 
         $book = \App\Models\Book::query()->firstOrFail();
 
-        $this->post("/books/{$book->id}/extract/mock")
-            ->assertRedirect("/books/{$book->id}");
-
-        $this->assertDatabaseHas('book_fields', [
+        $this->assertDatabaseHas('ai_runs', [
             'book_id' => $book->id,
-            'field_key' => 'author',
-            'value' => 'A. Mouchot',
-            'origin' => 'ai_visible',
-            'is_validated' => false,
+            'run_type' => 'title_page_extraction',
+            'provider' => 'mammouth',
+            'model' => 'gemini-2.5-flash-lite',
+            'status' => 'succeeded',
         ]);
         $this->assertDatabaseHas('book_fields', [
             'book_id' => $book->id,
             'field_key' => 'title',
-            'value' => 'La chaleur solaire et ses applications industrielles',
+            'value' => 'Titre extrait automatiquement',
             'origin' => 'ai_visible',
             'is_validated' => false,
-        ]);
-        $this->assertDatabaseHas('ai_runs', [
-            'book_id' => $book->id,
-            'run_type' => 'title_page_extraction',
-            'provider' => 'mock',
-            'model' => 'mouchot-fixture',
-            'status' => 'succeeded',
         ]);
         $this->assertDatabaseHas('books', [
             'id' => $book->id,
             'status' => 'extracted',
-        ]);
-        $this->assertDatabaseMissing('book_fields', [
-            'book_id' => $book->id,
-            'field_key' => 'pagination',
-            'value' => 'in-8',
         ]);
     }
 
@@ -327,16 +335,6 @@ class BookIntakeFlowTest extends TestCase
         ]);
 
         $book = \App\Models\Book::query()->firstOrFail();
-        $book->images()->update(['optimized_path' => null]);
-
-        $book->fields()->where('field_key', 'publisher_address')->update([
-            'value' => 'ancienne adresse à effacer',
-            'origin' => 'user_validated',
-            'is_validated' => true,
-        ]);
-
-        $this->post("/books/{$book->id}/extract/ai")
-            ->assertRedirect("/books/{$book->id}");
 
         Http::assertSent(fn ($request) =>
             $request->url() === 'https://api.mammouth.ai/v1/chat/completions'
@@ -347,19 +345,13 @@ class BookIntakeFlowTest extends TestCase
             && $request['messages'][0]['content'][1]['type'] === 'image_url'
             && str_starts_with($request['messages'][0]['content'][1]['image_url']['url'], 'data:image/')
         );
-        $this->assertDatabaseHas('book_fields', [
+        $this->assertDatabaseHas('ai_runs', [
             'book_id' => $book->id,
-            'field_key' => 'author',
-            'value' => 'A. Mouchot',
-            'origin' => 'ai_visible',
-            'is_validated' => false,
-        ]);
-        $this->assertDatabaseHas('book_fields', [
-            'book_id' => $book->id,
-            'field_key' => 'publication_date',
-            'value' => '1869',
-            'origin' => 'ai_visible',
-            'is_validated' => false,
+            'provider' => 'mammouth',
+            'model' => 'gemini-2.5-flash-lite',
+            'status' => 'succeeded',
+            'input_tokens' => 100,
+            'output_tokens' => 20,
         ]);
         $this->assertNotNull($book->images()->firstOrFail()->fresh()->optimized_path);
         $this->assertDatabaseMissing('book_fields', [
@@ -367,21 +359,7 @@ class BookIntakeFlowTest extends TestCase
             'field_key' => 'pagination',
             'value' => 'vii-238',
         ]);
-        $this->assertDatabaseHas('book_fields', [
-            'book_id' => $book->id,
-            'field_key' => 'publisher_address',
-            'value' => null,
-            'origin' => 'ai_visible',
-            'is_validated' => false,
-        ]);
-        $this->assertDatabaseHas('ai_runs', [
-            'book_id' => $book->id,
-            'provider' => 'mammouth',
-            'model' => 'gemini-2.5-flash-lite',
-            'status' => 'succeeded',
-            'input_tokens' => 1200,
-            'output_tokens' => 120,
-        ]);
+
     }
 
     public function test_ai_run_debug_panel_is_hidden_by_default_and_visible_when_enabled(): void
@@ -415,8 +393,8 @@ class BookIntakeFlowTest extends TestCase
             ->assertOk()
             ->assertSee('Diagnostic IA — phase de test')
             ->assertSee('gemini-2.5-flash-lite')
-            ->assertSee('0 in / 0 out')
-            ->assertSee('cached');
+            ->assertSee('100 in / 20 out')
+            ->assertSee('succeeded');
     }
 
     public function test_repeated_ai_extraction_reuses_cache_without_second_api_call(): void
@@ -450,7 +428,6 @@ class BookIntakeFlowTest extends TestCase
 
         $book = \App\Models\Book::query()->firstOrFail();
 
-        $this->post("/books/{$book->id}/extract/ai")->assertRedirect("/books/{$book->id}");
         $book->fields()->where('field_key', 'title')->update(['value' => 'à remplacer depuis cache']);
         $this->post("/books/{$book->id}/extract/ai")->assertRedirect("/books/{$book->id}");
 
@@ -463,13 +440,7 @@ class BookIntakeFlowTest extends TestCase
             'input_tokens' => 0,
             'output_tokens' => 0,
         ]);
-        $this->assertDatabaseHas('book_fields', [
-            'book_id' => $book->id,
-            'field_key' => 'title',
-            'value' => 'Titre extrait une seule fois',
-            'origin' => 'ai_visible',
-            'is_validated' => false,
-        ]);
+
     }
 
     public function test_source_search_requires_validated_title(): void

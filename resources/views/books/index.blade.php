@@ -18,6 +18,9 @@
         @if(session('status'))
             <p class="mt-4 rounded border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700">{{ session('status') }}</p>
         @endif
+        @if(session('error'))
+            <p class="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-900">{{ session('error') }}</p>
+        @endif
 
         <form method="post" action="{{ route('books.store') }}" enctype="multipart/form-data" class="mt-4 space-y-4" id="new-book-form">
             @csrf
