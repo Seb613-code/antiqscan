@@ -54,8 +54,10 @@
         </div>
 
         @php
-            $visibleFields = $book->fields->whereIn('origin', ['ai_visible', 'ai_enriched'])->sortBy('id');
-            $manualFields = $book->fields->where('origin', 'user_manual')->sortBy('id');
+            $visibleFieldKeys = ['author', 'title', 'subtitle', 'place', 'publisher', 'publisher_address', 'publication_date', 'illustration_statement', 'edition_statement', 'visible_notes'];
+            $manualFieldKeys = ['format', 'dimensions', 'pagination', 'binding', 'condition', 'copy_notes'];
+            $visibleFields = $book->fields->whereIn('field_key', $visibleFieldKeys)->sortBy('id');
+            $manualFields = $book->fields->whereIn('field_key', $manualFieldKeys)->sortBy('id');
         @endphp
 
         <form method="post" action="{{ route('books.fields.update', $book) }}" class="mt-5 space-y-6">

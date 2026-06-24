@@ -277,6 +277,13 @@ class BookIntakeFlowTest extends TestCase
             'id' => $book->id,
             'catalogue_note' => 'Notice corrigée par utilisateur.',
         ]);
+
+        $this->get("/books/{$book->id}")
+            ->assertOk()
+            ->assertSee('La chaleur solaire')
+            ->assertSee('Sous-titre')
+            ->assertSee('Enregistrer les modifications')
+            ->assertDontSee('type="checkbox"', false);
     }
 
     public function test_home_page_shows_library_actions_for_existing_books(): void
