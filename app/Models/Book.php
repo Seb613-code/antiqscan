@@ -48,4 +48,19 @@ class Book extends Model
     {
         return $this->hasMany(AiRun::class);
     }
+
+    public function titlePageImage(): ?BookImage
+    {
+        return $this->images->firstWhere('role', 'title_page') ?? $this->images->first();
+    }
+
+    public function displayCitation(): string
+    {
+        $fields = $this->fields->keyBy('field_key');
+        $author = trim((string) ($fields->get('author')->value ?? 'Auteur à confirmer'));
+        $title = trim((string) ($fields->get('title')->value ?? ($this->working_title ?? 'Titre à confirmer')));
+        $date = trim((string) ($fields->get('publication_date')->value ?? 'Date à confirmer'));
+
+        return mb_strtoupper($author).', '.$title.', '.$date.',';
+    }
 }

@@ -7,6 +7,7 @@ Route::get('/', [BookController::class, 'index'])->name('books.index');
 Route::get('/books', [BookController::class, 'index'])->name('books.list');
 Route::post('/books', [BookController::class, 'store'])->name('books.store');
 Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
+Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
 Route::put('/books/{book}/fields', [BookController::class, 'updateFields'])->name('books.fields.update');
 Route::post('/books/{book}/extract/mock', [BookController::class, 'extractMock'])->name('books.extract.mock');
 Route::post('/books/{book}/extract/ai', [BookController::class, 'extractAi'])->name('books.extract.ai');

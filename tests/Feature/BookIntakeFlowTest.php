@@ -17,7 +17,8 @@ class BookIntakeFlowTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('AntiQScan')
-            ->assertSee('Page de titre');
+            ->assertSee("Création d'une nouvelle fiche", false)
+            ->assertSee('Votre bibliothèque');
     }
 
     public function test_generated_urls_use_configured_public_app_url(): void
@@ -228,7 +229,8 @@ class BookIntakeFlowTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('Lancer l’extraction')
-            ->assertSee('Ouvrir le dossier');
+            ->assertSee('Modifier la fiche')
+            ->assertSee('Supprimer la fiche');
     }
 
     public function test_books_url_shows_extraction_button_for_existing_books(): void
@@ -242,7 +244,8 @@ class BookIntakeFlowTest extends TestCase
         $this->get('/books/')
             ->assertOk()
             ->assertSee('Lancer l’extraction')
-            ->assertSee('Ouvrir le dossier');
+            ->assertSee('Modifier la fiche')
+            ->assertSee('Supprimer la fiche');
     }
 
     public function test_mock_extraction_fills_mouchot_visible_fields_without_validation(): void

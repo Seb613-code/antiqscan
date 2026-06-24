@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class BookController extends Controller
@@ -20,14 +21,14 @@ class BookController extends Controller
     public function index(): View
     {
         return view('books.index', [
-            'books' => Book::query()->latest()->with('images')->paginate(20),
+            'books' => Book::query()->latest('updated_at')->with(['images', 'fields'])->paginate(20),
         ]);
     }
 
     public function store(Request $request, ImageIntakeService $images): RedirectResponse
     {
         $validated = $request->validate([
-            'title_page' => ['required', 'image', 'max:10240'],
+            'title_page' => ['required', 'file', 'mimetypes:image/jpeg', 'mimes:jpg,jpeg', 'max:10240'],
         ]);
 
         $book = Book::create(['status' => 'uploaded']);
@@ -40,7 +41,23 @@ class BookController extends Controller
 
         $this->createCatalogueFields($book);
 
-        return redirect()->route('books.show', $book);
+        return redirect()->route('books.index')->with('created_book_id', $book->id);
+    }
+
+    public function destroy(Book $book): RedirectResponse
+    {
+        $book->load('images');
+
+        foreach ($book->images as $image) {
+            Storage::disk('local')->delete(array_filter([
+                $image->original_path,
+                $image->optimized_path,
+            ]));
+        }
+
+        $book->delete();
+
+        return redirect()->route('books.index')->with('status', 'Fiche supprimée.');
     }
 
     private function createCatalogueFields(Book $book): void
