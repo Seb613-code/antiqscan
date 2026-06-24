@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AiRun;
 use App\Models\Book;
+use App\Models\BookImage;
 use App\Models\BookSource;
 use App\Services\BibliographicSourceSearchService;
 use App\Services\CatalogueSheetRenderer;
@@ -58,6 +59,15 @@ class BookController extends Controller
         $book->delete();
 
         return redirect()->route('books.index')->with('status', 'Fiche supprimée.');
+    }
+
+    public function image(BookImage $bookImage): Response
+    {
+        $path = $bookImage->optimized_path ?: $bookImage->original_path;
+
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        return response()->file(Storage::disk('local')->path($path));
     }
 
     private function createCatalogueFields(Book $book): void

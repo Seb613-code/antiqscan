@@ -24,7 +24,7 @@
             <input name="title_page" type="file" accept=".jpg,.jpeg,image/jpeg" required class="block w-full rounded border p-2" id="title-page-input">
             <div id="title-page-preview-wrap" class="hidden">
                 <p class="mb-2 text-sm text-stone-600">Miniature de la page de titre</p>
-                <img id="title-page-preview" alt="Miniature de la page de titre" class="h-[200px] w-[200px] rounded border object-cover">
+                <img id="title-page-preview" alt="Miniature de la page de titre" width="100" height="100" style="width: 100px; height: 100px; max-width: 100px; max-height: 100px;" class="block rounded border object-cover">
             </div>
             <button id="create-book-button" class="rounded bg-stone-900 px-4 py-2 text-white disabled:cursor-not-allowed disabled:bg-stone-300" disabled>Créer la fiche</button>
         </form>
@@ -51,7 +51,7 @@
                         <td class="whitespace-nowrap px-3 py-3 font-medium">#{{ $book->id }}</td>
                         <td class="px-3 py-3">
                             @if($image)
-                                <img src="{{ route('storage.local', ['path' => $image->optimized_path ?? $image->original_path]) }}" alt="Page de titre fiche {{ $book->id }}" class="h-[50px] w-[50px] rounded border object-cover">
+                                <img src="{{ route('book-images.show', $image) }}" alt="Page de titre fiche {{ $book->id }}" width="50" height="50" style="width: 50px; height: 50px; max-width: 50px; max-height: 50px;" class="block rounded border object-cover">
                             @else
                                 <div class="h-[50px] w-[50px] rounded border bg-stone-100"></div>
                             @endif
@@ -68,10 +68,6 @@
                                     @csrf
                                     @method('delete')
                                     <button type="submit" class="rounded border border-red-700 px-3 py-2 text-sm font-semibold text-red-700">Supprimer la fiche</button>
-                                </form>
-                                <form method="post" action="{{ route('books.extract.mock', $book) }}">
-                                    @csrf
-                                    <button type="submit" class="rounded border border-black px-3 py-2 text-sm font-semibold text-black">Lancer l’extraction</button>
                                 </form>
                             </div>
                         </td>

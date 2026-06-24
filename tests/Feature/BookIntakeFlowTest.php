@@ -218,7 +218,7 @@ class BookIntakeFlowTest extends TestCase
         ]);
     }
 
-    public function test_home_page_shows_extraction_button_for_existing_books(): void
+    public function test_home_page_shows_library_actions_for_existing_books(): void
     {
         Storage::fake('local');
 
@@ -228,12 +228,13 @@ class BookIntakeFlowTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Lancer l’extraction')
             ->assertSee('Modifier la fiche')
-            ->assertSee('Supprimer la fiche');
+            ->assertSee('Supprimer la fiche')
+            ->assertSee('width="50"', false)
+            ->assertDontSee('Lancer l’extraction');
     }
 
-    public function test_books_url_shows_extraction_button_for_existing_books(): void
+    public function test_books_url_shows_library_actions_for_existing_books(): void
     {
         Storage::fake('local');
 
@@ -243,9 +244,9 @@ class BookIntakeFlowTest extends TestCase
 
         $this->get('/books/')
             ->assertOk()
-            ->assertSee('Lancer l’extraction')
             ->assertSee('Modifier la fiche')
-            ->assertSee('Supprimer la fiche');
+            ->assertSee('Supprimer la fiche')
+            ->assertDontSee('Lancer l’extraction');
     }
 
     public function test_mock_extraction_fills_mouchot_visible_fields_without_validation(): void
