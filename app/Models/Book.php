@@ -56,6 +56,10 @@ class Book extends Model
 
     public function displayCitation(): string
     {
+        if (filled($this->working_title)) {
+            return $this->working_title;
+        }
+
         $fields = $this->fields->keyBy('field_key');
         $author = trim((string) ($fields->get('author')->value ?? 'Auteur à confirmer'));
         $title = trim((string) ($fields->get('title')->value ?? ($this->working_title ?? 'Titre à confirmer')));

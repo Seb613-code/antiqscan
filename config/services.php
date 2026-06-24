@@ -44,6 +44,14 @@ return [
         'show_run_debug' => (bool) env('ANTIQSCAN_AI_SHOW_RUN_DEBUG', false),
     ],
 
+    'antiqscan_enrichment' => [
+        'provider' => env('ANTIQSCAN_ENRICHMENT_PROVIDER', env('ANTIQSCAN_AI_PROVIDER', 'mammouth')),
+        'base_url' => env('ANTIQSCAN_ENRICHMENT_BASE_URL', env('ANTIQSCAN_AI_BASE_URL', 'https://api.mammouth.ai/v1')),
+        'api_key' => env('ANTIQSCAN_ENRICHMENT_API_KEY', env('ANTIQSCAN_AI_API_KEY', env('MAMMOUTH_API_KEY'))),
+        'model' => env('ANTIQSCAN_ENRICHMENT_MODEL', 'sonar'),
+        'max_output_tokens' => (int) env('ANTIQSCAN_ENRICHMENT_MAX_OUTPUT_TOKENS', 1200),
+    ],
+
     'antiqscan_sources' => [
         'provider' => env('ANTIQSCAN_SOURCES_PROVIDER', 'mock'),
     ],

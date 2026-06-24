@@ -9,6 +9,7 @@ use App\Services\BibliographicSourceSearchService;
 use App\Services\CatalogueSheetRenderer;
 use App\Services\ImageIntakeService;
 use App\Services\TitlePageAiExtractionService;
+use App\Services\TitlePageEnrichmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +26,7 @@ class BookController extends Controller
         ]);
     }
 
-    public function store(Request $request, ImageIntakeService $images, TitlePageAiExtractionService $extractor): RedirectResponse
+    public function store(Request $request, ImageIntakeService $images, TitlePageAiExtractionService $extractor, TitlePageEnrichmentService $enricher): RedirectResponse
     {
         $validated = $request->validate([
             'title_page' => ['required', 'file', 'mimetypes:image/jpeg', 'mimes:jpg,jpeg', 'max:10240'],
@@ -42,7 +43,10 @@ class BookController extends Controller
         $this->createCatalogueFields($book);
 
         try {
-            $extractor->extract($book);
+            $visionRun = $extractor->extract($book);
+            if (in_array($visionRun->status, ['succeeded', 'cached'], true)) {
+                $enricher->enrich($book->fresh(['fields', 'sources']));
+            }
         } catch (\Throwable $exception) {
             return redirect()->route('books.index')
                 ->with('created_book_id', $book->id)

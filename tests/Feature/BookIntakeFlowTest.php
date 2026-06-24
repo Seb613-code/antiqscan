@@ -21,18 +21,43 @@ class BookIntakeFlowTest extends TestCase
             'services.antiqscan_ai.api_key' => 'test-key',
             'services.antiqscan_ai.model' => 'gemini-2.5-flash-lite',
             'services.antiqscan_ai.max_output_tokens' => 450,
+            'services.antiqscan_enrichment.base_url' => 'https://api.mammouth.ai/v1',
+            'services.antiqscan_enrichment.api_key' => 'test-key',
+            'services.antiqscan_enrichment.model' => 'sonar',
+            'services.antiqscan_enrichment.max_output_tokens' => 1200,
         ]);
 
-        Http::fake([
-            'api.mammouth.ai/v1/chat/completions' => Http::response([
+        Http::fake(fn ($request) => str_contains(json_encode($request->data(), JSON_UNESCAPED_UNICODE), 'bibliographique')
+            ? Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode([
+                            'display_title' => 'MOUCHOT, Chaleur solaire, 1869,',
+                            'author' => 'MOUCHOT, Augustin',
+                            'title' => 'La chaleur solaire et ses applications industrielles',
+                            'publisher' => 'Gauthier-villars',
+                            'place' => 'Paris',
+                            'publication_date' => '1869',
+                            'academic_notice' => 'Notice factuelle sourcée.',
+                            'sources' => [[
+                                'title' => 'BnF notice',
+                                'url' => 'https://catalogue.bnf.fr/ark:/12148/cb00000000',
+                                'citation' => 'Bibliothèque nationale de France.',
+                            ]],
+                        ]),
+                    ],
+                ]],
+                'usage' => ['prompt_tokens' => 300, 'completion_tokens' => 90],
+            ], 200)
+            : Http::response([
                 'choices' => [[
                     'message' => [
                         'content' => json_encode(['fields' => ['title' => 'Titre extrait automatiquement']]),
                     ],
                 ]],
                 'usage' => ['prompt_tokens' => 100, 'completion_tokens' => 20],
-            ], 200),
-        ]);
+            ], 200)
+        );
     }
 
     public function test_home_page_lists_empty_books_and_upload_form(): void
@@ -82,7 +107,6 @@ class BookIntakeFlowTest extends TestCase
         foreach (['author', 'title', 'subtitle', 'place', 'publisher', 'publisher_address', 'publication_date', 'illustration_statement', 'edition_statement', 'visible_notes'] as $fieldKey) {
             $this->assertDatabaseHas('book_fields', [
                 'field_key' => $fieldKey,
-                'origin' => 'ai_visible',
                 'is_editable' => true,
                 'is_validated' => false,
             ]);
@@ -292,13 +316,28 @@ class BookIntakeFlowTest extends TestCase
         $this->assertDatabaseHas('book_fields', [
             'book_id' => $book->id,
             'field_key' => 'title',
-            'value' => 'Titre extrait automatiquement',
-            'origin' => 'ai_visible',
+            'value' => 'La chaleur solaire et ses applications industrielles',
+            'origin' => 'ai_enriched',
             'is_validated' => false,
         ]);
         $this->assertDatabaseHas('books', [
             'id' => $book->id,
             'status' => 'extracted',
+            'working_title' => 'MOUCHOT, Chaleur solaire, 1869,',
+            'catalogue_note' => 'Notice factuelle sourcée.',
+        ]);
+        $this->assertDatabaseHas('ai_runs', [
+            'book_id' => $book->id,
+            'run_type' => 'title_page_enrichment',
+            'provider' => 'mammouth',
+            'model' => 'sonar',
+            'status' => 'succeeded',
+        ]);
+        $this->assertDatabaseHas('book_sources', [
+            'book_id' => $book->id,
+            'source_type' => 'ai_enrichment',
+            'title' => 'BnF notice',
+            'user_approved' => false,
         ]);
     }
 
@@ -431,7 +470,7 @@ class BookIntakeFlowTest extends TestCase
         $book->fields()->where('field_key', 'title')->update(['value' => 'à remplacer depuis cache']);
         $this->post("/books/{$book->id}/extract/ai")->assertRedirect("/books/{$book->id}");
 
-        Http::assertSentCount(1);
+        Http::assertSentCount(2);
         $firstRun = \App\Models\AiRun::query()->where('status', 'succeeded')->firstOrFail();
         $this->assertDatabaseHas('ai_runs', [
             'book_id' => $book->id,
@@ -455,7 +494,7 @@ class BookIntakeFlowTest extends TestCase
             ->assertRedirect("/books/{$book->id}")
             ->assertSessionHas('error');
 
-        $this->assertDatabaseCount('book_sources', 0);
+        $this->assertDatabaseCount('book_sources', 1);
     }
 
     public function test_source_candidates_are_created_and_must_be_approved_before_export(): void

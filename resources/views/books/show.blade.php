@@ -56,7 +56,7 @@
         </div>
 
         @php
-            $visibleFields = $book->fields->where('origin', 'ai_visible')->sortBy('id');
+            $visibleFields = $book->fields->whereIn('origin', ['ai_visible', 'ai_enriched'])->sortBy('id');
             $manualFields = $book->fields->where('origin', 'user_manual')->sortBy('id');
         @endphp
 
