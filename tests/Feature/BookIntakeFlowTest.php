@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\AiRun;
+use App\Models\Book;
+use App\Models\BookImage;
+use App\Models\BookSource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -89,7 +93,7 @@ class BookIntakeFlowTest extends TestCase
         $this->assertDatabaseHas('books', ['status' => 'extracted']);
         $this->assertDatabaseHas('book_images', ['role' => 'title_page', 'sort_order' => 1]);
 
-        $image = \App\Models\BookImage::query()->firstOrFail();
+        $image = BookImage::query()->firstOrFail();
         $this->assertNotNull($image->optimized_path);
         Storage::disk('local')->assertExists($image->optimized_path);
         [$width, $height] = getimagesize(Storage::disk('local')->path($image->optimized_path));
@@ -124,7 +128,7 @@ class BookIntakeFlowTest extends TestCase
 
     public function test_catalogue_sheet_does_not_show_unvalidated_ai_fields(): void
     {
-        $book = \App\Models\Book::factory()->create(['status' => 'extracted']);
+        $book = Book::factory()->create(['status' => 'extracted']);
         $book->fields()->create([
             'field_key' => 'title',
             'label' => 'Titre',
@@ -138,6 +142,52 @@ class BookIntakeFlowTest extends TestCase
         $this->get("/books/{$book->id}/catalogue")
             ->assertOk()
             ->assertDontSee('Visible but not validated');
+    }
+
+    public function test_catalogue_sheet_renders_a_structured_notice_from_validated_data_only(): void
+    {
+        $book = Book::factory()->create([
+            'status' => 'validated',
+            'catalogue_note' => 'Notice factuelle validée.',
+        ]);
+
+        foreach ([
+            ['author', 'Auteur', 'A. Mouchot'],
+            ['title', 'Titre', 'La chaleur solaire'],
+            ['place', 'Lieu', 'Paris'],
+            ['publisher', 'Éditeur', 'Gauthier-Villars'],
+            ['publication_date', 'Date', '1869'],
+            ['pagination', 'Collation', 'VII-238 p.'],
+            ['binding', 'Reliure', 'Demi-chagrin'],
+        ] as [$key, $label, $value]) {
+            $book->fields()->create([
+                'field_key' => $key,
+                'label' => $label,
+                'value' => $value,
+                'origin' => 'user_validated',
+                'is_validated' => true,
+                'is_editable' => true,
+            ]);
+        }
+
+        $book->fields()->create([
+            'field_key' => 'condition',
+            'label' => 'État',
+            'value' => 'Information non validée',
+            'origin' => 'ai_visible',
+            'is_validated' => false,
+            'is_editable' => true,
+        ]);
+
+        $this->get("/books/{$book->id}/catalogue")
+            ->assertOk()
+            ->assertSee('MOUCHOT, La chaleur solaire, 1869,', false)
+            ->assertSee('Publication')
+            ->assertSee('Collation')
+            ->assertSee('Reliure, état et particularités')
+            ->assertSee('Notice')
+            ->assertSee('Notice factuelle validée.', false)
+            ->assertDontSee('Information non validée');
     }
 
     public function test_validated_catalogue_can_be_exported_as_markdown(): void
@@ -176,9 +226,9 @@ class BookIntakeFlowTest extends TestCase
             ->assertDontSee('999 € non validé');
     }
 
-    private function bookWithOneValidatedAndOneUnvalidatedField(): \App\Models\Book
+    private function bookWithOneValidatedAndOneUnvalidatedField(): Book
     {
-        $book = \App\Models\Book::factory()->create(['status' => 'validated']);
+        $book = Book::factory()->create(['status' => 'validated']);
         $book->fields()->create([
             'field_key' => 'title',
             'label' => 'Titre',
@@ -207,7 +257,7 @@ class BookIntakeFlowTest extends TestCase
             'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
         ]);
 
-        $book = \App\Models\Book::query()->firstOrFail();
+        $book = Book::query()->firstOrFail();
 
         $this->get("/books/{$book->id}")
             ->assertOk()
@@ -245,7 +295,7 @@ class BookIntakeFlowTest extends TestCase
             'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
         ]);
 
-        $book = \App\Models\Book::query()->firstOrFail();
+        $book = Book::query()->firstOrFail();
         $title = $book->fields()->where('field_key', 'title')->firstOrFail();
         $subtitle = $book->fields()->where('field_key', 'subtitle')->firstOrFail();
 
@@ -325,7 +375,7 @@ class BookIntakeFlowTest extends TestCase
             'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
         ])->assertRedirect();
 
-        $book = \App\Models\Book::query()->firstOrFail();
+        $book = Book::query()->firstOrFail();
 
         $this->assertDatabaseHas('ai_runs', [
             'book_id' => $book->id,
@@ -394,10 +444,9 @@ class BookIntakeFlowTest extends TestCase
             'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
         ]);
 
-        $book = \App\Models\Book::query()->firstOrFail();
+        $book = Book::query()->firstOrFail();
 
-        Http::assertSent(fn ($request) =>
-            $request->url() === 'https://api.mammouth.ai/v1/chat/completions'
+        Http::assertSent(fn ($request) => $request->url() === 'https://api.mammouth.ai/v1/chat/completions'
             && $request['model'] === 'gemini-2.5-flash-lite'
             && $request['max_tokens'] === 450
             && $request['messages'][0]['content'][0]['type'] === 'text'
@@ -428,7 +477,7 @@ class BookIntakeFlowTest extends TestCase
         $this->post('/books', [
             'title_page' => UploadedFile::fake()->image('titre.jpg', 800, 1200),
         ]);
-        $book = \App\Models\Book::query()->firstOrFail();
+        $book = Book::query()->firstOrFail();
         $book->aiRuns()->create([
             'run_type' => 'title_page_extraction',
             'provider' => 'mammouth',
@@ -486,13 +535,13 @@ class BookIntakeFlowTest extends TestCase
             'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
         ]);
 
-        $book = \App\Models\Book::query()->firstOrFail();
+        $book = Book::query()->firstOrFail();
 
         $book->fields()->where('field_key', 'title')->update(['value' => 'à remplacer depuis cache']);
         $this->post("/books/{$book->id}/extract/ai")->assertRedirect("/books/{$book->id}");
 
         Http::assertSentCount(2);
-        $firstRun = \App\Models\AiRun::query()->where('status', 'succeeded')->firstOrFail();
+        $firstRun = AiRun::query()->where('status', 'succeeded')->firstOrFail();
         $this->assertDatabaseHas('ai_runs', [
             'book_id' => $book->id,
             'status' => 'cached',
@@ -509,7 +558,7 @@ class BookIntakeFlowTest extends TestCase
         $this->post('/books', [
             'title_page' => UploadedFile::fake()->image('titre.jpg', 800, 1200),
         ]);
-        $book = \App\Models\Book::query()->firstOrFail();
+        $book = Book::query()->firstOrFail();
 
         $this->post("/books/{$book->id}/sources/search")
             ->assertRedirect("/books/{$book->id}")
@@ -525,7 +574,7 @@ class BookIntakeFlowTest extends TestCase
         $this->post('/books', [
             'title_page' => UploadedFile::fake()->image('titre.jpg', 800, 1200),
         ]);
-        $book = \App\Models\Book::query()->firstOrFail();
+        $book = Book::query()->firstOrFail();
         $book->fields()->where('field_key', 'title')->update([
             'value' => 'La chaleur solaire',
             'is_validated' => true,
@@ -536,7 +585,7 @@ class BookIntakeFlowTest extends TestCase
             ->assertRedirect("/books/{$book->id}")
             ->assertSessionHas('status');
 
-        $source = \App\Models\BookSource::query()->firstOrFail();
+        $source = BookSource::query()->firstOrFail();
         $this->get("/books/{$book->id}/export/markdown")
             ->assertOk()
             ->assertDontSee('Source candidate — La chaleur solaire');

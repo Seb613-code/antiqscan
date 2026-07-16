@@ -24,6 +24,38 @@ class CatalogueSheetRenderer
         return $rows;
     }
 
+    public function renderCitation(iterable $fields): ?string
+    {
+        $byKey = collect($this->renderArray($fields))->keyBy('key');
+        $author = trim((string) data_get($byKey->get('author'), 'value'));
+        $title = trim((string) data_get($byKey->get('title'), 'value'));
+        $date = trim((string) data_get($byKey->get('publication_date'), 'value'));
+
+        $parts = array_filter([$author !== '' ? mb_strtoupper($author) : null, $title ?: null, $date ?: null]);
+
+        return $parts === [] ? null : implode(', ', $parts).',';
+    }
+
+    public function renderCatalogueSections(iterable $fields): array
+    {
+        $byKey = collect($this->renderArray($fields))->keyBy('key');
+
+        $sections = [
+            'Publication' => ['author', 'title', 'subtitle', 'edition_statement', 'place', 'publisher', 'publisher_address', 'publication_date', 'illustration_statement', 'visible_notes'],
+            'Collation' => ['format', 'dimensions', 'pagination'],
+            'Reliure, état et particularités' => ['binding', 'condition', 'copy_notes'],
+        ];
+
+        return collect($sections)
+            ->map(fn (array $keys, string $heading) => [
+                'heading' => $heading,
+                'fields' => collect($keys)->map(fn (string $key) => $byKey->get($key))->filter()->values()->all(),
+            ])
+            ->filter(fn (array $section) => $section['fields'] !== [])
+            ->values()
+            ->all();
+    }
+
     public function renderSourcesArray(iterable $sources): array
     {
         $rows = [];

@@ -10,9 +10,9 @@ use App\Services\CatalogueSheetRenderer;
 use App\Services\ImageIntakeService;
 use App\Services\TitlePageAiExtractionService;
 use App\Services\TitlePageEnrichmentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -177,7 +177,9 @@ class BookController extends Controller
 
         return view('books.catalogue', [
             'book' => $book,
-            'markdown' => $renderer->renderMarkdown($book->fields, $book->sources),
+            'citation' => $renderer->renderCitation($book->fields),
+            'sections' => $renderer->renderCatalogueSections($book->fields),
+            'sources' => $renderer->renderSourcesArray($book->sources),
         ]);
     }
 
