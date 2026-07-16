@@ -8,4 +8,174 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif: 'Iowan Old Style', 'Palatino Linotype', 'URW Palladio L', 'Book Antiqua', Georgia, serif;
+}
+
+:root {
+    --color-ivory: #f7f3ea;
+    --color-surface: #fffdf8;
+    --color-surface-muted: #f1ece1;
+    --color-border: #d9d0c0;
+    --color-border-strong: #bcae96;
+    --color-ink: #1f2933;
+    --color-muted: #5f6b76;
+    --color-accent: #2f6b4f;
+    --color-accent-strong: #24533d;
+    --color-accent-soft: #e6f0ea;
+    --color-danger: #9f2d2d;
+    --shadow-card: 0 18px 40px -28px rgba(31, 41, 51, 0.35);
+    --radius-card: 1.25rem;
+    --radius-pill: 999px;
+}
+
+body {
+    background: linear-gradient(180deg, #fbf8f1 0%, var(--color-ivory) 100%);
+    color: var(--color-ink);
+}
+
+.page-shell {
+    @apply min-h-screen;
+}
+
+.page-header {
+    @apply border-b;
+    background: rgba(255, 253, 248, 0.92);
+    border-color: var(--color-border);
+}
+
+.page-header__inner {
+    @apply mx-auto flex max-w-6xl flex-col gap-3 px-6 py-5 md:flex-row md:items-end md:justify-between;
+}
+
+.page-brand {
+    @apply flex flex-col gap-1;
+}
+
+.page-brand__eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.28em];
+    color: var(--color-accent);
+}
+
+.page-brand__title {
+    @apply text-2xl font-semibold tracking-tight;
+}
+
+.page-brand__subtitle {
+    @apply max-w-2xl text-sm;
+    color: var(--color-muted);
+}
+
+.page-container {
+    @apply mx-auto max-w-6xl px-6 py-8 md:py-10;
+}
+
+.section-card {
+    @apply rounded-[1.25rem] border p-5 md:p-6;
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-card);
+}
+
+.section-card-muted {
+    @apply rounded-[1.25rem] border p-5 md:p-6;
+    background: var(--color-surface-muted);
+    border-color: var(--color-border);
+}
+
+.meta-label {
+    @apply text-xs font-semibold uppercase tracking-[0.22em];
+    color: var(--color-muted);
+}
+
+.status-badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold;
+    background: var(--color-surface-muted);
+    color: var(--color-ink);
+}
+
+.status-badge--review {
+    background: #f6ead8;
+    color: #8a5a17;
+}
+
+.status-badge--validated {
+    background: var(--color-accent-soft);
+    color: var(--color-accent-strong);
+}
+
+.button-primary,
+.button-secondary,
+.button-danger {
+    @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition;
+}
+
+.button-primary {
+    background: var(--color-accent);
+    color: white;
+}
+
+.button-primary:hover {
+    background: var(--color-accent-strong);
+}
+
+.button-secondary {
+    @apply border;
+    border-color: var(--color-border-strong);
+    color: var(--color-ink);
+    background: transparent;
+}
+
+.button-secondary:hover {
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.button-danger {
+    @apply border;
+    border-color: rgba(159, 45, 45, 0.28);
+    color: var(--color-danger);
+    background: rgba(159, 45, 45, 0.06);
+}
+
+.form-input,
+.form-textarea,
+.form-file {
+    @apply w-full rounded-2xl border px-4 py-3 text-sm;
+    background: white;
+    border-color: var(--color-border);
+    color: var(--color-ink);
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-file:focus {
+    outline: 2px solid transparent;
+    box-shadow: 0 0 0 3px rgba(47, 107, 79, 0.14);
+    border-color: var(--color-accent);
+}
+
+.form-textarea {
+    @apply min-h-28;
+}
+
+.document-sheet {
+    @apply mx-auto max-w-3xl rounded-[1.5rem] border px-6 py-8 md:px-10 md:py-10;
+    background: #fffefb;
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-card);
+    font-family: var(--font-serif);
+}
+
+.document-rule {
+    @apply border-t pt-5;
+    border-color: var(--color-border);
+}
+
+.library-card-grid {
+    @apply grid gap-4;
+}
+
+@media (min-width: 768px) {
+    .library-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }

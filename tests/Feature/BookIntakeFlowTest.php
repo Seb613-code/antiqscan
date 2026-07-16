@@ -144,11 +144,35 @@ class BookIntakeFlowTest extends TestCase
             ->assertDontSee('Visible but not validated');
     }
 
+    public function test_catalogue_sheet_hides_unvalidated_ai_notice_but_keeps_it_for_validated_record(): void
+    {
+        $draftBook = Book::factory()->create([
+            'status' => 'extracted',
+            'catalogue_note' => 'Notice IA non validée.',
+            'user_validated_at' => null,
+        ]);
+
+        $this->get("/books/{$draftBook->id}/catalogue")
+            ->assertOk()
+            ->assertDontSee('Notice IA non validée.', false);
+
+        $validatedBook = Book::factory()->create([
+            'status' => 'validated',
+            'catalogue_note' => 'Notice factuelle validée.',
+            'user_validated_at' => now(),
+        ]);
+
+        $this->get("/books/{$validatedBook->id}/catalogue")
+            ->assertOk()
+            ->assertSee('Notice factuelle validée.', false);
+    }
+
     public function test_catalogue_sheet_renders_a_structured_notice_from_validated_data_only(): void
     {
         $book = Book::factory()->create([
             'status' => 'validated',
             'catalogue_note' => 'Notice factuelle validée.',
+            'user_validated_at' => now(),
         ]);
 
         foreach ([
@@ -264,12 +288,11 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Image')
             ->assertSee('height="300"', false)
             ->assertSee('object-contain')
-            ->assertSee('Champs visibles sur page de titre')
-            ->assertSee('Notice')
+            ->assertSee('Informations bibliographiques repérées')
+            ->assertSee('Notice de catalogue')
             ->assertSee('Notice factuelle sourcée.')
-            ->assertSee('Champs physiques manuels')
-            ->assertSee('Sources')
-            ->assertSee('Prix / estimation')
+            ->assertSee('Description matérielle')
+            ->assertSee('Sources à vérifier')
             ->assertSee('Enregistrer les modifications')
             ->assertDontSee('Valider les champs remplis')
             ->assertDontSee('Enregistrer les validations')
@@ -346,7 +369,8 @@ class BookIntakeFlowTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Modifier la fiche')
+            ->assertSee('À relire')
+            ->assertSee('Relire la fiche')
             ->assertSee('Supprimer la fiche')
             ->assertSee('width="50"', false)
             ->assertDontSee('Lancer l’extraction');
@@ -362,9 +386,138 @@ class BookIntakeFlowTest extends TestCase
 
         $this->get('/books/')
             ->assertOk()
-            ->assertSee('Modifier la fiche')
+            ->assertSee('À relire')
+            ->assertSee('Relire la fiche')
             ->assertSee('Supprimer la fiche')
             ->assertDontSee('Lancer l’extraction');
+    }
+
+    public function test_home_page_shows_review_and_catalogue_status_cards_with_next_actions(): void
+    {
+        $reviewBook = Book::factory()->create([
+            'status' => 'extracted',
+            'working_title' => 'MOUCHOT, Chaleur solaire, 1869,',
+            'user_validated_at' => null,
+        ]);
+        $validatedBook = Book::factory()->create([
+            'status' => 'validated',
+            'working_title' => 'SEGUIN, Chemins de fer, 1839,',
+            'user_validated_at' => now(),
+        ]);
+
+        $response = $this->get('/');
+
+        $response->assertOk()
+            ->assertSee('Importer')
+            ->assertSee('Relire')
+            ->assertSee('Consulter')
+            ->assertSee('À relire')
+            ->assertSee('Validée')
+            ->assertSee('Relire la fiche')
+            ->assertSee('Voir le catalogue')
+            ->assertSee(route('books.show', $reviewBook), false)
+            ->assertSee(route('books.catalogue', $validatedBook), false);
+    }
+
+    public function test_created_book_flash_message_explicitly_points_to_review_step(): void
+    {
+        Storage::fake('local');
+
+        $response = $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
+        ]);
+
+        $response->assertRedirect();
+
+        $book = Book::query()->firstOrFail();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Fiche créée.')
+            ->assertSee('Les champs extraits doivent maintenant être relus avant consultation du catalogue.')
+            ->assertSee('Relire la fiche')
+            ->assertSee(route('books.show', $book), false);
+    }
+
+    public function test_book_show_page_uses_documentary_review_headings(): void
+    {
+        Storage::fake('local');
+
+        $this->post('/books', [
+            'title_page' => UploadedFile::fake()->image('titre.jpg', 1200, 1600),
+        ]);
+
+        $book = Book::query()->firstOrFail();
+
+        $this->get("/books/{$book->id}")
+            ->assertOk()
+            ->assertSee('Informations bibliographiques repérées')
+            ->assertSee('Notice de catalogue')
+            ->assertSee('Description matérielle')
+            ->assertSee('Sources à vérifier')
+            ->assertDontSee('Champs visibles sur page de titre')
+            ->assertDontSee('Notice académique générée par l’étape 2, modifiable.')
+            ->assertDontSee('Champs physiques manuels');
+    }
+
+    public function test_catalogue_page_uses_documentary_sheet_shell(): void
+    {
+        $book = Book::factory()->create([
+            'status' => 'validated',
+            'working_title' => 'MOUCHOT, Chaleur solaire, 1869,',
+            'catalogue_note' => 'Notice factuelle validée.',
+            'user_validated_at' => now(),
+        ]);
+        $book->fields()->create([
+            'field_key' => 'title',
+            'label' => 'Titre',
+            'value' => 'La chaleur solaire',
+            'origin' => 'user_validated',
+            'is_validated' => true,
+            'is_editable' => true,
+        ]);
+
+        $this->get("/books/{$book->id}/catalogue")
+            ->assertOk()
+            ->assertSee('Fiche catalogue validée')
+            ->assertSee('Voir le catalogue')
+            ->assertSee('document-sheet', false);
+    }
+
+    public function test_catalogue_cta_and_screen_copy_follow_validation_state(): void
+    {
+        $draftBook = Book::factory()->create([
+            'status' => 'extracted',
+            'working_title' => 'MOUCHOT, Chaleur solaire, 1869,',
+            'user_validated_at' => null,
+        ]);
+        $validatedBook = Book::factory()->create([
+            'status' => 'validated',
+            'working_title' => 'SEGUIN, Chemins de fer, 1839,',
+            'user_validated_at' => now(),
+        ]);
+
+        $this->get("/books/{$draftBook->id}")
+            ->assertOk()
+            ->assertSee('Aperçu de catalogue')
+            ->assertDontSee('Voir fiche catalogue');
+
+        $this->get("/books/{$validatedBook->id}")
+            ->assertOk()
+            ->assertSee('Voir le catalogue')
+            ->assertDontSee('Aperçu de catalogue');
+
+        $this->get("/books/{$draftBook->id}/catalogue")
+            ->assertOk()
+            ->assertSee('Aperçu de catalogue')
+            ->assertSee('Brouillon non validé')
+            ->assertDontSee('Fiche catalogue validée');
+
+        $this->get("/books/{$validatedBook->id}/catalogue")
+            ->assertOk()
+            ->assertSee('Voir le catalogue')
+            ->assertSee('Fiche catalogue validée')
+            ->assertDontSee('Brouillon non validé');
     }
 
     public function test_create_book_launches_ai_extraction_immediately(): void
