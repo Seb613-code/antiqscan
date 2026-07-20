@@ -76,7 +76,14 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Auteur')
             ->assertSee('Titre')
             ->assertSee('Date')
-            ->assertSee('Rechercher une fiche');
+            ->assertSee('Rechercher une fiche')
+            ->assertSee('Filtres')
+            ->assertSee('Date de publication')
+            ->assertSee('Du')
+            ->assertSee('Au')
+            ->assertSee('Trier par auteur, croissant')
+            ->assertSee('Trier par auteur, décroissant')
+            ->assertDontSee('Fiches validées');
     }
 
     public function test_home_page_shows_an_authenticated_users_library(): void
@@ -407,7 +414,7 @@ class BookIntakeFlowTest extends TestCase
             ->assertDontSee('Lancer l’extraction');
     }
 
-    public function test_home_page_shows_review_and_catalogue_status_cards_with_next_actions(): void
+    public function test_home_page_shows_review_card_and_library_rows_with_next_actions(): void
     {
         $reviewBook = Book::factory()->create([
             'status' => 'extracted',
@@ -425,13 +432,12 @@ class BookIntakeFlowTest extends TestCase
         $response->assertOk()
             ->assertSee('Importer')
             ->assertSee('Relire')
-            ->assertSee('Voir le catalogue')
             ->assertSee('À relire')
-            ->assertSee('Validée')
             ->assertSee('Relire la fiche')
-            ->assertSee('Voir le catalogue')
+            ->assertSee('Voir la fiche')
+            ->assertDontSee('Fiches validées')
             ->assertSee(route('books.show', $reviewBook), false)
-            ->assertSee(route('books.catalogue', $validatedBook), false);
+            ->assertSee(route('books.show', $validatedBook), false);
     }
 
     public function test_created_book_flash_message_explicitly_points_to_review_step(): void
