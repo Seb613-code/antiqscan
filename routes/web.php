@@ -33,6 +33,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/', [BookController::class, 'index'])->name('books.index');
     Route::get('/books', [BookController::class, 'index'])->name('books.list');
     Route::post('/books', [BookController::class, 'store'])->name('books.store');
+    Route::post('/books/export/csv', [BookController::class, 'exportBulkCsv'])->name('books.export.bulk.csv');
+    Route::post('/books/export/pdf', [BookController::class, 'exportBulkPdf'])->name('books.export.bulk.pdf');
     Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
     Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
     Route::get('/book-images/{bookImage}', [BookController::class, 'image'])->name('book-images.show');

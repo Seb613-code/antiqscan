@@ -69,6 +69,8 @@ class BookIntakeFlowTest extends TestCase
 
     public function test_home_page_shows_review_card_and_filterable_library_table(): void
     {
+        Book::factory()->create();
+
         $this->get('/')
             ->assertOk()
             ->assertSee('Fiches à relire')
@@ -83,6 +85,10 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Au')
             ->assertSee('Trier par auteur, croissant')
             ->assertSee('Trier par auteur, décroissant')
+            ->assertSee('Export')
+            ->assertSee('Export CSV')
+            ->assertSee('Export PDF')
+            ->assertSee('name="book_ids[]"', false)
             ->assertDontSee('Fiches validées');
     }
 

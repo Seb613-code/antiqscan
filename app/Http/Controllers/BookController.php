@@ -10,6 +10,7 @@ use App\Services\CatalogueSheetRenderer;
 use App\Services\ImageIntakeService;
 use App\Services\TitlePageAiExtractionService;
 use App\Services\TitlePageEnrichmentService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -204,6 +205,75 @@ class BookController extends Controller
             'fields' => $renderer->renderArray($book->fields),
             'sources' => $renderer->renderSourcesArray($book->sources),
         ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    }
+
+    public function exportBulkCsv(Request $request, CatalogueSheetRenderer $renderer): Response
+    {
+        $books = $this->selectedBooks($request);
+        $handle = fopen('php://temp', 'r+');
+        fputcsv($handle, ['book_id', 'citation', 'key', 'label', 'value', 'origin']);
+
+        foreach ($books as $book) {
+            foreach ($renderer->renderArray($book->fields) as $field) {
+                fputcsv($handle, array_map($this->csvCell(...), [
+                    $book->id,
+                    $renderer->renderCitation($book->fields),
+                    $field['key'],
+                    $field['label'],
+                    $field['value'],
+                    $field['origin'],
+                ]));
+            }
+        }
+
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+        fclose($handle);
+
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename=antiqscan-selection.csv',
+        ]);
+    }
+
+    public function exportBulkPdf(Request $request, CatalogueSheetRenderer $renderer)
+    {
+        $books = $this->selectedBooks($request);
+        $catalogueBooks = $books->map(fn (Book $book) => [
+            'book' => $book,
+            'citation' => $renderer->renderCitation($book->fields),
+            'sections' => $renderer->renderCatalogueSections($book->fields),
+            'sources' => $renderer->renderSourcesArray($book->sources),
+        ]);
+
+        return Pdf::loadView('books.exports.selection-pdf', ['books' => $catalogueBooks])
+            ->setPaper('a4')
+            ->download('antiqscan-selection.pdf');
+    }
+
+    private function selectedBooks(Request $request)
+    {
+        $validated = $request->validate([
+            'book_ids' => ['required', 'array', 'min:1', 'max:100'],
+            'book_ids.*' => ['required', 'integer', 'distinct'],
+        ]);
+        $bookIds = $validated['book_ids'];
+        $books = Book::query()
+            ->whereBelongsTo($request->user())
+            ->whereKey($bookIds)
+            ->with(['fields', 'sources'])
+            ->get();
+
+        abort_unless($books->count() === count($bookIds), 403);
+
+        return $books;
+    }
+
+    private function csvCell(mixed $value): string
+    {
+        $value = (string) $value;
+
+        return preg_match('/^[=+@-]/', $value) ? "'{$value}" : $value;
     }
 
     public function exportCsv(Book $book, CatalogueSheetRenderer $renderer): Response

@@ -55,6 +55,7 @@
                     <input id="library-search" class="form-input mt-1" placeholder="Auteur ou titre">
                 </label>
                 <button id="filters-toggle" class="button-secondary" type="button" aria-expanded="false" aria-controls="library-filters">Filtres</button>
+                <button id="export-toggle" class="button-secondary" type="button" aria-expanded="false" aria-controls="library-export">Export</button>
             </div>
         </div>
 
@@ -84,10 +85,24 @@
             </div>
         </fieldset>
 
+        <div id="library-export" class="mt-4 hidden rounded border p-4">
+            <p class="text-sm text-stone-600">Sélectionnez une ou plusieurs fiches dans le tableau, puis choisissez le format.</p>
+            <div class="mt-3 flex flex-wrap gap-3">
+                <button class="button-secondary" type="submit" form="bulk-export-form" formaction="{{ route('books.export.bulk.csv') }}">Export CSV</button>
+                <button class="button-primary" type="submit" form="bulk-export-form" formaction="{{ route('books.export.bulk.pdf') }}">Export PDF</button>
+            </div>
+            @error('book_ids')<p class="mt-3 text-sm text-red-700">{{ $message }}</p>@enderror
+        </div>
+
+        <form id="bulk-export-form" method="post">
+            @csrf
+        </form>
+
         <div class="mt-4 overflow-x-auto">
             <table class="min-w-full text-left text-sm" id="library-table">
                 <thead class="border-b">
                     <tr>
+                        <th><input id="select-all-books" type="checkbox" aria-label="Sélectionner toutes les fiches visibles"></th>
                         <th>
                             Auteur
                             <button class="ml-1" data-sort="author" data-direction="asc" type="button" aria-label="Trier par auteur, croissant">↑</button>
@@ -111,7 +126,8 @@
                         @php($fields = $book->fields->keyBy('field_key'))
                         @php($publicationDate = $fields->get('publication_date')->value ?? '')
                         <tr class="border-b" data-author="{{ strtolower($fields->get('author')->value ?? '') }}" data-title="{{ strtolower($fields->get('title')->value ?? '') }}" data-date="{{ $publicationDate }}" data-status="{{ $book->user_validated_at ? 'validated' : 'review' }}">
-                            <td class="py-3">{{ $fields->get('author')->value ?? '—' }}</td>
+                            <td class="py-3"><input class="book-export-checkbox" type="checkbox" name="book_ids[]" value="{{ $book->id }}" form="bulk-export-form" aria-label="Sélectionner {{ $book->displayCitation() }}"></td>
+                            <td>{{ $fields->get('author')->value ?? '—' }}</td>
                             <td>{{ $fields->get('title')->value ?? $book->displayCitation() }}</td>
                             <td>{{ $publicationDate ?: '—' }}</td>
                             <td class="whitespace-nowrap">
@@ -124,7 +140,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="py-6 text-stone-600">Aucune fiche pour l’instant.</td></tr>
+                        <tr><td colspan="5" class="py-6 text-stone-600">Aucune fiche pour l’instant.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -142,6 +158,9 @@
         const dateFrom = document.getElementById('library-date-from');
         const dateTo = document.getElementById('library-date-to');
         const resetFilters = document.getElementById('filters-reset');
+        const exportToggle = document.getElementById('export-toggle');
+        const exportPanel = document.getElementById('library-export');
+        const selectAllBooks = document.getElementById('select-all-books');
 
         const filterRows = () => {
             const query = search.value.toLowerCase().trim();
@@ -163,6 +182,20 @@
             const isOpen = filtersToggle.getAttribute('aria-expanded') === 'true';
             filtersToggle.setAttribute('aria-expanded', String(!isOpen));
             filtersPanel.classList.toggle('hidden', isOpen);
+        });
+
+        exportToggle.addEventListener('click', () => {
+            const isOpen = exportToggle.getAttribute('aria-expanded') === 'true';
+            exportToggle.setAttribute('aria-expanded', String(!isOpen));
+            exportPanel.classList.toggle('hidden', isOpen);
+        });
+
+        selectAllBooks.addEventListener('change', () => {
+            table.querySelectorAll('tbody tr[data-author]').forEach((row) => {
+                if (!row.hidden) {
+                    row.querySelector('.book-export-checkbox').checked = selectAllBooks.checked;
+                }
+            });
         });
 
         [search, statusFilter, dateFrom, dateTo].forEach((input) => input.addEventListener('input', filterRows));
