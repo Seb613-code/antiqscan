@@ -31,6 +31,8 @@ class BookIntakeFlowTest extends TestCase
             'services.antiqscan_enrichment.max_output_tokens' => 1200,
         ]);
 
+        $this->withSession(['antiqscan_access_granted' => true]);
+
         Http::fake(fn ($request) => str_contains(json_encode($request->data(), JSON_UNESCAPED_UNICODE), 'bibliographique')
             ? Http::response([
                 'choices' => [[
@@ -64,8 +66,19 @@ class BookIntakeFlowTest extends TestCase
         );
     }
 
-    public function test_home_page_lists_empty_books_and_upload_form(): void
+    public function test_home_page_requires_access_password_before_library_is_visible(): void
     {
+        config(['antiqscan.access_password' => 'test-secret']);
+        $this->flushSession();
+
+        $this->get('/')->assertRedirect(route('access.create'));
+
+        $this->post(route('access.store'), ['password' => 'wrong-password'])
+            ->assertSessionHasErrors('password');
+
+        $this->post(route('access.store'), ['password' => 'test-secret'])
+            ->assertRedirect(route('books.index'));
+
         $this->get('/')
             ->assertOk()
             ->assertSee('AntiQScan')
