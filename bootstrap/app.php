@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Public Caddy forwards to FrankenPHP with a local Host header. Trust the
+        // proxy-provided public scheme and host so signed verification URLs remain valid.
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'antiqscan.access' => EnsureAntiqscanAccess::class,
         ]);
