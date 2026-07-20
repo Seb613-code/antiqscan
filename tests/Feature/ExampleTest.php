@@ -11,6 +11,6 @@ class ExampleTest extends TestCase
 
     public function test_the_application_redirects_anonymous_visitors_to_the_access_screen(): void
     {
-        $this->get('/')->assertRedirect(route('access.create'));
+        $this->get('/')->assertRedirect(route('login'));
     }
 }

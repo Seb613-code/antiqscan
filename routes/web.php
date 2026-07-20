@@ -1,13 +1,35 @@
 <?php
 
-use App\Http\Controllers\AccessController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/access', [AccessController::class, 'create'])->name('access.create');
-Route::post('/access', [AccessController::class, 'store'])->name('access.store');
+Route::middleware('guest')->group(function (): void {
+    Route::get('/inscription', [AuthController::class, 'createRegister'])->name('register.create');
+    Route::post('/inscription', [AuthController::class, 'storeRegister'])->name('register.store');
+    Route::get('/connexion', [AuthController::class, 'createLogin'])->name('login');
+    Route::post('/connexion', [AuthController::class, 'storeLogin'])->name('login.store');
+});
 
-Route::middleware('antiqscan.access')->group(function (): void {
+Route::middleware('auth')->group(function (): void {
+    Route::get('/verifier-email', fn () => view('auth.verify-email'))->name('verification.notice');
+    Route::get('/verifier-email/{id}/{hash}', function (EmailVerificationRequest $request): RedirectResponse {
+        $request->fulfill();
+
+        return redirect()->route('books.index');
+    })->middleware('signed')->name('verification.verify');
+    Route::post('/verifier-email/renvoyer', function (Request $request): RedirectResponse {
+        $request->user()->sendEmailVerificationNotification();
+
+        return back()->with('status', 'Lien de vérification renvoyé.');
+    })->middleware('throttle:6,1')->name('verification.send');
+    Route::post('/deconnexion', [AuthController::class, 'destroy'])->name('logout');
+});
+
+Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/', [BookController::class, 'index'])->name('books.index');
     Route::get('/books', [BookController::class, 'index'])->name('books.list');
     Route::post('/books', [BookController::class, 'store'])->name('books.store');

@@ -6,6 +6,7 @@ use App\Models\AiRun;
 use App\Models\Book;
 use App\Models\BookImage;
 use App\Models\BookSource;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -31,7 +32,7 @@ class BookIntakeFlowTest extends TestCase
             'services.antiqscan_enrichment.max_output_tokens' => 1200,
         ]);
 
-        $this->withSession(['antiqscan_access_granted' => true]);
+        $this->actingAs(User::factory()->create());
 
         Http::fake(fn ($request) => str_contains(json_encode($request->data(), JSON_UNESCAPED_UNICODE), 'bibliographique')
             ? Http::response([
@@ -66,19 +67,20 @@ class BookIntakeFlowTest extends TestCase
         );
     }
 
-    public function test_home_page_requires_access_password_before_library_is_visible(): void
+    public function test_home_page_shows_review_card_and_filterable_library_table(): void
     {
-        config(['antiqscan.access_password' => 'test-secret']);
-        $this->flushSession();
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Fiches à relire')
+            ->assertSee('Votre bibliothèque')
+            ->assertSee('Auteur')
+            ->assertSee('Titre')
+            ->assertSee('Date')
+            ->assertSee('Rechercher une fiche');
+    }
 
-        $this->get('/')->assertRedirect(route('access.create'));
-
-        $this->post(route('access.store'), ['password' => 'wrong-password'])
-            ->assertSessionHasErrors('password');
-
-        $this->post(route('access.store'), ['password' => 'test-secret'])
-            ->assertRedirect(route('books.index'));
-
+    public function test_home_page_shows_an_authenticated_users_library(): void
+    {
         $this->get('/')
             ->assertOk()
             ->assertSee('AntiQScan')
@@ -385,7 +387,7 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('À relire')
             ->assertSee('Relire la fiche')
             ->assertSee('Supprimer la fiche')
-            ->assertSee('width="50"', false)
+            ->assertSee('Voir la fiche')
             ->assertDontSee('Lancer l’extraction');
     }
 
@@ -423,7 +425,7 @@ class BookIntakeFlowTest extends TestCase
         $response->assertOk()
             ->assertSee('Importer')
             ->assertSee('Relire')
-            ->assertSee('Consulter')
+            ->assertSee('Voir le catalogue')
             ->assertSee('À relire')
             ->assertSee('Validée')
             ->assertSee('Relire la fiche')

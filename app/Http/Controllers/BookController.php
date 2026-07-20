@@ -19,10 +19,13 @@ use Illuminate\View\View;
 
 class BookController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $library = Book::query()->whereBelongsTo($request->user())->with(['images', 'fields']);
+
         return view('books.index', [
-            'books' => Book::query()->latest('updated_at')->with(['images', 'fields'])->paginate(20),
+            'reviewBooks' => (clone $library)->whereNull('user_validated_at')->latest('updated_at')->get(),
+            'books' => $library->latest('updated_at')->paginate(20),
         ]);
     }
 
@@ -32,7 +35,7 @@ class BookController extends Controller
             'title_page' => ['required', 'file', 'mimetypes:image/jpeg', 'mimes:jpg,jpeg', 'max:10240'],
         ]);
 
-        $book = Book::create(['status' => 'uploaded']);
+        $book = $request->user()->books()->create(['status' => 'uploaded']);
         $imageData = $images->storeTitlePage($validated['title_page']);
 
         $book->images()->create($imageData + [

@@ -12,6 +12,11 @@ class BookImage extends Model
         'mime_type', 'size_bytes', 'width', 'height',
     ];
 
+    public function resolveRouteBinding($value, $field = null): ?Model
+    {
+        return $this->whereKey($value)->whereHas('book', fn ($query) => $query->where('user_id', auth()->id()))->first();
+    }
+
     public function book(): BelongsTo
     {
         return $this->belongsTo(Book::class);
