@@ -14,7 +14,17 @@
                 <a href="{{ route('books.index') }}" class="page-brand__title">AntiQScan</a>
                 <p class="page-brand__subtitle">Importez une page de titre, relisez les champs utiles et consultez une fiche catalogue validée.</p>
             </div>
-            <p class="text-sm text-stone-600">Interface de consultation claire, sans jargon technique.</p>
+            @auth
+                <div class="flex items-center gap-3 text-sm text-stone-600">
+                    <span>Connecté : <strong>{{ auth()->user()->name }}</strong></span>
+                    <form method="post" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="button-secondary" type="submit">Se déconnecter</button>
+                    </form>
+                </div>
+            @else
+                <p class="text-sm text-stone-600">Interface de consultation claire, sans jargon technique.</p>
+            @endauth
         </div>
     </header>
 

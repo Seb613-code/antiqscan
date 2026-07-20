@@ -26,6 +26,18 @@ class UserLibraryAccessTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'sebastien@example.test']);
     }
 
+    public function test_authenticated_header_shows_the_users_name_and_logout_action(): void
+    {
+        $user = User::factory()->create(['name' => 'Sébastien Vatinel']);
+
+        $this->actingAs($user)
+            ->get(route('books.index'))
+            ->assertOk()
+            ->assertSee('Sébastien Vatinel')
+            ->assertSee('Se déconnecter')
+            ->assertSee(route('logout'), false);
+    }
+
     public function test_user_cannot_see_or_delete_another_users_book(): void
     {
         $owner = User::factory()->create();
