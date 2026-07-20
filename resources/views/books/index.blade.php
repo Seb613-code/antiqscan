@@ -19,6 +19,10 @@
             <form method="post" action="{{ route('books.store') }}" enctype="multipart/form-data" class="mt-5 space-y-4" id="new-book-form">
                 @csrf
                 <input name="title_page" type="file" accept=".jpg,.jpeg,image/jpeg" required class="form-file" id="title-page-input">
+                <figure id="title-page-preview-container" class="hidden rounded border bg-stone-50 p-3">
+                    <img id="title-page-preview" alt="Aperçu de la page de titre sélectionnée" class="mx-auto rounded object-contain" width="220" height="300" style="width: 220px; height: 300px; max-width: 100%; max-height: 300px;">
+                    <figcaption class="mt-2 text-xs text-stone-600">Aperçu avant création de la fiche.</figcaption>
+                </figure>
                 <button id="create-book-button" class="button-primary w-full">Créer la fiche</button>
             </form>
         </section>
@@ -29,11 +33,15 @@
 
             <div class="mt-4 flex gap-3 overflow-x-auto pb-3">
                 @forelse ($reviewBooks as $book)
-                    <div class="flex min-w-[22rem] items-center justify-between gap-4 rounded border p-3">
-                        <span>
+                    @php($titlePage = $book->images->firstWhere('role', 'title_page'))
+                    <div class="flex min-w-[22rem] items-center gap-4 rounded border p-3">
+                        @if ($titlePage)
+                            <img src="{{ route('book-images.show', $titlePage) }}" alt="Aperçu de la page de titre de la fiche à relire" class="shrink-0 rounded object-cover" width="96" height="128" style="width: 96px; height: 128px; max-width: 96px; max-height: 128px;">
+                        @endif
+                        <div class="min-w-0 flex-1">
                             <span class="status-badge status-badge--review">À relire</span>
-                            {{ $book->displayCitation() }}
-                        </span>
+                            <p class="mt-2 break-words">{{ $book->displayCitation() }}</p>
+                        </div>
                         <a class="button-secondary shrink-0" href="{{ route('books.show', $book) }}">Relire la fiche</a>
                     </div>
                 @empty
@@ -161,6 +169,10 @@
         const exportToggle = document.getElementById('export-toggle');
         const exportPanel = document.getElementById('library-export');
         const selectAllBooks = document.getElementById('select-all-books');
+        const titlePageInput = document.getElementById('title-page-input');
+        const titlePagePreview = document.getElementById('title-page-preview');
+        const titlePagePreviewContainer = document.getElementById('title-page-preview-container');
+        let titlePageObjectUrl;
 
         const filterRows = () => {
             const query = search.value.toLowerCase().trim();
@@ -188,6 +200,21 @@
             const isOpen = exportToggle.getAttribute('aria-expanded') === 'true';
             exportToggle.setAttribute('aria-expanded', String(!isOpen));
             exportPanel.classList.toggle('hidden', isOpen);
+        });
+
+        titlePageInput.addEventListener('change', () => {
+            const [file] = titlePageInput.files;
+            if (titlePageObjectUrl) {
+                URL.revokeObjectURL(titlePageObjectUrl);
+            }
+            if (!file) {
+                titlePagePreview.removeAttribute('src');
+                titlePagePreviewContainer.classList.add('hidden');
+                return;
+            }
+            titlePageObjectUrl = URL.createObjectURL(file);
+            titlePagePreview.src = titlePageObjectUrl;
+            titlePagePreviewContainer.classList.remove('hidden');
         });
 
         selectAllBooks.addEventListener('change', () => {

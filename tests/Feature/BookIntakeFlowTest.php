@@ -92,6 +92,28 @@ class BookIntakeFlowTest extends TestCase
             ->assertDontSee('Fiches validées');
     }
 
+    public function test_home_page_shows_upload_and_review_photo_previews(): void
+    {
+        $book = Book::factory()->create();
+        $image = $book->images()->create([
+            'role' => 'title_page',
+            'sort_order' => 1,
+            'original_path' => 'books/title-page.jpg',
+            'optimized_path' => 'books/title-page-optimized.jpg',
+            'mime_type' => 'image/jpeg',
+            'size_bytes' => 12_000,
+            'width' => 800,
+            'height' => 1200,
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('id="title-page-preview"', false)
+            ->assertSee('Aperçu de la page de titre sélectionnée')
+            ->assertSee(route('book-images.show', $image), false)
+            ->assertSee('Aperçu de la page de titre de la fiche à relire');
+    }
+
     public function test_home_page_shows_an_authenticated_users_library(): void
     {
         $this->get('/')
