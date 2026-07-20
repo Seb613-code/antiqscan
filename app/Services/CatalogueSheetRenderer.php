@@ -33,7 +33,7 @@ class CatalogueSheetRenderer
 
         $parts = array_filter([$author !== '' ? mb_strtoupper($author) : null, $title ?: null, $date ?: null]);
 
-        return $parts === [] ? null : implode(', ', $parts).',';
+        return $parts === [] ? null : implode(', ', $parts);
     }
 
     public function renderCatalogueSections(iterable $fields): array

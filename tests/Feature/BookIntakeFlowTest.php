@@ -233,7 +233,8 @@ class BookIntakeFlowTest extends TestCase
 
         $this->get("/books/{$book->id}/catalogue")
             ->assertOk()
-            ->assertSee('MOUCHOT, La chaleur solaire, 1869,', false)
+            ->assertSee('MOUCHOT, La chaleur solaire, 1869', false)
+            ->assertDontSee('MOUCHOT, La chaleur solaire, 1869,', false)
             ->assertSee('Publication')
             ->assertSee('Collation')
             ->assertSee('Reliure, état et particularités')
