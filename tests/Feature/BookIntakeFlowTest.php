@@ -111,7 +111,9 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('id="title-page-preview"', false)
             ->assertSee('Aperçu de la page de titre sélectionnée')
             ->assertSee(route('book-images.show', $image), false)
-            ->assertSee('Aperçu de la page de titre de la fiche à relire');
+            ->assertSee('Aperçu de la page de titre de la fiche à relire')
+            ->assertSee('title-page-zoom', false)
+            ->assertSee('Survolez l’image pour l’agrandir.');
     }
 
     public function test_home_page_shows_an_authenticated_users_library(): void

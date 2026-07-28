@@ -174,6 +174,46 @@ body {
     @apply grid gap-4;
 }
 
+.title-page-zoom {
+    position: relative;
+    z-index: 0;
+    margin: 0;
+}
+
+.title-page-zoom__image {
+    display: block;
+}
+
+.title-page-zoom__hint {
+    margin-top: 0.4rem;
+    max-width: 6rem;
+    color: var(--color-muted);
+    font-size: 0.6875rem;
+    line-height: 1.2;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .title-page-zoom__image {
+        transition: transform 160ms ease, box-shadow 160ms ease;
+        transform-origin: left center;
+    }
+
+    .title-page-zoom:hover {
+        z-index: 10;
+    }
+
+    .title-page-zoom:hover .title-page-zoom__image {
+        box-shadow: 0 16px 30px -14px rgba(31, 41, 51, 0.55);
+        transform: scale(2.4);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .title-page-zoom__image {
+        transition: none;
+    }
+}
+
 @media (min-width: 768px) {
     .library-card-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
