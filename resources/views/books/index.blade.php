@@ -36,10 +36,7 @@
                     @php($titlePage = $book->images->firstWhere('role', 'title_page'))
                     <div class="flex min-w-[22rem] items-center gap-4 rounded border p-3">
                         @if ($titlePage)
-                            <figure class="title-page-zoom shrink-0">
-                                <img src="{{ route('book-images.show', $titlePage) }}" alt="Aperçu de la page de titre de la fiche à relire" class="title-page-zoom__image rounded object-cover" width="96" height="128" style="width: 96px; height: 128px; max-width: 96px; max-height: 128px;">
-                                <figcaption class="title-page-zoom__hint">Survolez l’image pour l’agrandir.</figcaption>
-                            </figure>
+                            <img src="{{ route('book-images.show', $titlePage) }}" alt="Aperçu de la page de titre de la fiche à relire" class="shrink-0 rounded object-cover" width="96" height="128" style="width: 96px; height: 128px; max-width: 96px; max-height: 128px;">
                         @endif
                         <div class="min-w-0 flex-1">
                             <span class="status-badge status-badge--review">À relire</span>

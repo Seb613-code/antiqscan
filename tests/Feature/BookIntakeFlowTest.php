@@ -112,8 +112,8 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Aperçu de la page de titre sélectionnée')
             ->assertSee(route('book-images.show', $image), false)
             ->assertSee('Aperçu de la page de titre de la fiche à relire')
-            ->assertSee('title-page-zoom', false)
-            ->assertSee('Survolez l’image pour l’agrandir.');
+            ->assertDontSee('title-page-zoom', false)
+            ->assertDontSee('Survolez l’image pour l’agrandir.');
     }
 
     public function test_home_page_shows_an_authenticated_users_library(): void
@@ -341,6 +341,9 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('Image')
             ->assertSee('height="300"', false)
             ->assertSee('object-contain')
+            ->assertSee('title-page-zoom', false)
+            ->assertSee('title-page-zoom__magnified', false)
+            ->assertSee('Survolez l’image pour l’agrandir.')
             ->assertSee('Informations bibliographiques repérées')
             ->assertSee('Notice de catalogue')
             ->assertSee('Notice factuelle sourcée.')

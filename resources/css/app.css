@@ -177,11 +177,16 @@ body {
 .title-page-zoom {
     position: relative;
     z-index: 0;
+    display: inline-block;
     margin: 0;
 }
 
 .title-page-zoom__image {
     display: block;
+}
+
+.title-page-zoom__magnified {
+    display: none;
 }
 
 .title-page-zoom__hint {
@@ -194,17 +199,32 @@ body {
 
 @media (hover: hover) and (pointer: fine) {
     .title-page-zoom__image {
-        transition: transform 160ms ease, box-shadow 160ms ease;
-        transform-origin: left center;
+        cursor: zoom-in;
     }
 
     .title-page-zoom:hover {
         z-index: 10;
     }
 
-    .title-page-zoom:hover .title-page-zoom__image {
+    .title-page-zoom__magnified {
+        position: absolute;
+        top: 0;
+        left: calc(100% + 1rem);
+        display: block;
+        width: min(34rem, 42vw);
+        max-height: 70vh;
+        padding: 0.5rem;
+        background: white;
         box-shadow: 0 16px 30px -14px rgba(31, 41, 51, 0.55);
-        transform: scale(2.4);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(-0.5rem);
+        transition: opacity 160ms ease, transform 160ms ease;
+    }
+
+    .title-page-zoom:hover .title-page-zoom__magnified {
+        opacity: 1;
+        transform: translateX(0);
     }
 }
 
