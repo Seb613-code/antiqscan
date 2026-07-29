@@ -211,8 +211,10 @@ body {
         top: 0;
         left: calc(100% + 1rem);
         display: block;
-        width: min(34rem, 42vw);
-        max-height: 70vh;
+        width: auto;
+        height: 600px;
+        max-width: 42vw;
+        max-height: none;
         padding: 0.5rem;
         background: white;
         box-shadow: 0 16px 30px -14px rgba(31, 41, 51, 0.55);

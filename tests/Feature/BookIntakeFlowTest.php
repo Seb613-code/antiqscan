@@ -344,6 +344,7 @@ class BookIntakeFlowTest extends TestCase
             ->assertSee('title-page-zoom', false)
             ->assertSee('title-page-zoom__magnified', false)
             ->assertSee('Survolez l’image pour l’agrandir.')
+            ->assertSee('data-zoom-scale="2"', false)
             ->assertSee('Informations bibliographiques repérées')
             ->assertSee('Notice de catalogue')
             ->assertSee('Notice factuelle sourcée.')

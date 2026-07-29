@@ -58,7 +58,7 @@
                 <h2 class="text-lg font-medium">Image</h2>
                 <div class="mt-3 space-y-4">
                     @forelse($book->images as $image)
-                        <figure class="title-page-zoom">
+                        <figure class="title-page-zoom" data-zoom-scale="2">
                             <img src="{{ route('book-images.show', $image) }}" alt="Page de titre fiche {{ $book->id }}" height="300" style="height: 300px; max-height: 300px; width: auto; max-width: 100%;" class="title-page-zoom__image block rounded border object-contain">
                             <img src="{{ route('book-images.show', $image) }}" alt="" aria-hidden="true" class="title-page-zoom__magnified rounded border object-contain">
                             <figcaption class="title-page-zoom__hint">Survolez l’image pour l’agrandir.</figcaption>
