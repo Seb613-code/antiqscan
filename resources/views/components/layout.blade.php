@@ -11,7 +11,14 @@
         <div class="page-header__inner">
             <div class="page-brand">
                 <p class="page-brand__eyebrow">Bibliothèque documentaire</p>
-                <a href="{{ route('books.index') }}" class="page-brand__title">AntiQScan</a>
+                <a href="{{ route('books.index') }}" class="page-brand__title" aria-label="AntIqscan, accueil">
+                    <svg class="page-brand__logo" viewBox="0 0 44 44" role="img" aria-label="Monogramme AI" xmlns="http://www.w3.org/2000/svg">
+                        <path class="page-brand__square" d="M7 7v30h17" fill="none" stroke-linecap="round" />
+                        <path class="page-brand__a" d="M13 33 22 11l9 22M17 24h10" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        <path class="page-brand__i" d="M29 9v26" fill="none" stroke-linecap="round" />
+                    </svg>
+                    <span>Ant<span class="page-brand__ai">I</span>qscan</span>
+                </a>
                 <p class="page-brand__subtitle">Importez une page de titre, relisez les champs utiles et consultez une fiche catalogue validée.</p>
             </div>
             @auth

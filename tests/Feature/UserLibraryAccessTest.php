@@ -38,6 +38,18 @@ class UserLibraryAccessTest extends TestCase
             ->assertSee(route('logout'), false);
     }
 
+    public function test_header_displays_the_antiqscan_ai_ligature_brand(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('books.index'))
+            ->assertOk()
+            ->assertSee('AntIqscan')
+            ->assertSee('page-brand__logo', false)
+            ->assertSee('aria-label="Monogramme AI"', false);
+    }
+
     public function test_user_cannot_see_or_delete_another_users_book(): void
     {
         $owner = User::factory()->create();
