@@ -45,6 +45,7 @@ class UserLibraryAccessTest extends TestCase
         $this->actingAs($user)
             ->get(route('books.index'))
             ->assertOk()
+            ->assertSee('<title>AntIqscan</title>', false)
             ->assertSee('AntIqscan')
             ->assertSee('page-brand__logo', false)
             ->assertSee('aria-label="Monogramme AI"', false);

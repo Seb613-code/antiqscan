@@ -120,7 +120,7 @@ class BookIntakeFlowTest extends TestCase
     {
         $this->get('/')
             ->assertOk()
-            ->assertSee('AntiQScan')
+            ->assertSee('AntIqscan')
             ->assertSee("Création d'une nouvelle fiche", false)
             ->assertSee('Votre bibliothèque');
     }
