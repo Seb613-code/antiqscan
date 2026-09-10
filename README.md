@@ -1,6 +1,26 @@
-# AntiQScan
+# AntIqscan
 
-SaaS Laravel/MySQL pour créer des fiches de catalogue de librairie ancienne à partir d’une photo de page de titre.
+Application Laravel/MySQL pour créer des fiches de catalogue de librairie ancienne à partir d’une photographie de page de titre.
+
+**Démonstration :** [antiqscan.vatinel.fr](https://antiqscan.vatinel.fr)
+
+## Aperçu
+
+### Workflow fonctionnel
+
+<img src="docs/images/antiqscan-workflow.png" alt="Workflow AntIqscan en six étapes : importer, extraire, relire, compléter, sourcer, puis cataloguer et exporter" width="600">
+
+### Bibliothèque et création d’une fiche
+
+<img src="docs/images/antiqscan-library.png" alt="Bibliothèque AntIqscan avec import d’une page de titre, fiches à relire, recherche et export" width="600">
+
+### Relecture des données extraites
+
+<img src="docs/images/antiqscan-review.png" alt="Écran AntIqscan de relecture et correction des informations bibliographiques extraites" width="570">
+
+### Fiche catalogue validée et sourcée
+
+<img src="docs/images/antiqscan-catalogue.png" alt="Fiche catalogue validée produite par AntIqscan avec publication, notice et sources" width="525">
 
 ## Principes V1
 
